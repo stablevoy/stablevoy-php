@@ -37,10 +37,7 @@ final class HttpTransport implements Transport
         if (trim($apiKey) === '') {
             throw new \InvalidArgumentException('The API key is empty. Create one in the Stablevoy dashboard.');
         }
-        if (!preg_match('#^https?://[^/]+$#', rtrim($baseUrl, '/'))) {
-            throw new \InvalidArgumentException(sprintf('The base URL must be a scheme and host, like https://api.stablevoy.com; got %s', $baseUrl));
-        }
-        $this->baseUrl = rtrim($baseUrl, '/');
+        $this->baseUrl = self::checkedBaseUrl($baseUrl);
     }
 
     public function get(string $path, array $query = []): array
@@ -93,6 +90,24 @@ final class HttpTransport implements Transport
             }
             $this->sleeper->sleep($wait);
         }
+    }
+
+    /**
+     * Only a scheme, a host and an optional port. The API key travels in every request, so plain http is refused except
+     * for a local development server, and so are credentials, paths, queries and fragments in the URL.
+     */
+    private static function checkedBaseUrl(string $baseUrl): string
+    {
+        $url = rtrim($baseUrl, '/');
+        $parts = parse_url($url);
+        $host = is_array($parts) ? ($parts['host'] ?? '') : '';
+        $scheme = is_array($parts) ? ($parts['scheme'] ?? '') : '';
+        $extra = is_array($parts) && (isset($parts['user']) || isset($parts['pass']) || isset($parts['path']) || isset($parts['query']) || isset($parts['fragment']));
+        $local = in_array(strtolower($host), ['localhost', '127.0.0.1', '[::1]'], true);
+        if ($host === '' || $extra || !($scheme === 'https' || ($scheme === 'http' && $local))) {
+            throw new \InvalidArgumentException(sprintf('The base URL must be https and only a host, like https://api.stablevoy.com (http only for localhost); got %s', $baseUrl));
+        }
+        return $url;
     }
 
     private static function isRetryable(ApiException $error): bool

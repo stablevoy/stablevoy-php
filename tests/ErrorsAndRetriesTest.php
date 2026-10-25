@@ -44,7 +44,7 @@ final class ErrorsAndRetriesTest extends ApiTestCase
     {
         $client = $this->clientWith(RetryPolicy::none(), self::json($status, self::problem($status, $code, 'Something went wrong')));
         try {
-            $client->invoices()->get('x');
+            $client->invoices()->get('7c3360b5-e8cc-4775-8a13-7324d4f1296e');
             self::fail('no exception');
         } catch (ApiException $e) {
             self::assertSame($class, $e::class);
@@ -107,7 +107,7 @@ final class ErrorsAndRetriesTest extends ApiTestCase
     {
         $client = $this->client(self::json(503, self::problem(503, 'maintenance', 'Stablevoy is under maintenance.'), ['Retry-After' => '300']));
         try {
-            $client->invoices()->get('x');
+            $client->invoices()->get('7c3360b5-e8cc-4775-8a13-7324d4f1296e');
             self::fail('no exception');
         } catch (MaintenanceException $e) {
             self::assertSame(300, $e->retryAfterSeconds);

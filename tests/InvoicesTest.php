@@ -24,7 +24,7 @@ final class InvoicesTest extends ApiTestCase
         self::assertSame('Bearer sk_test_key', $request->getHeaderLine('Authorization'));
         self::assertSame('order-1042', $request->getHeaderLine('Idempotency-Key'));
         self::assertSame('application/json', $request->getHeaderLine('Content-Type'));
-        self::assertStringStartsWith('stablevoy-php/1.0.0 PHP/', $request->getHeaderLine('User-Agent'));
+        self::assertStringStartsWith('stablevoy-php/1.0.1 PHP/', $request->getHeaderLine('User-Agent'));
         self::assertSame(['amountUsdCents' => 1999, 'externalReference' => 'order-1042', 'returnUrl' => 'https://shop.example/thanks'], json_decode((string) $request->getBody(), true));
         self::assertSame($example['checkoutUrl'], $created->checkoutUrl);
         self::assertSame($example['id'], $created->invoice->id);
@@ -50,14 +50,38 @@ final class InvoicesTest extends ApiTestCase
         $example = OpenApi::example('GET', '/v1/invoices/{invoiceId}', 200);
         $client = $this->client(self::json(200, $example));
 
-        $invoice = $client->invoices()->get('a b/c');
+        $invoice = $client->invoices()->get('7c3360b5-e8cc-4775-8a13-7324d4f1296e');
 
-        self::assertSame('https://api.stablevoy.com/v1/invoices/a%20b%2Fc', (string) $this->http->last()->getUri());
+        self::assertSame('https://api.stablevoy.com/v1/invoices/7c3360b5-e8cc-4775-8a13-7324d4f1296e', (string) $this->http->last()->getUri());
         self::assertSame($example['amountUsdCents'], $invoice->amountUsdCents);
         self::assertSame($example['status'], $invoice->status);
         self::assertSame(InvoiceStatus::isPaid($example['status']), $invoice->isPaid());
         self::assertIsArray($example['depositAddresses']);
         self::assertCount(count($example['depositAddresses']), $invoice->depositAddresses);
+    }
+
+    /**
+     * @return iterable<string, array{string}>
+     */
+    public static function notInvoiceIds(): iterable
+    {
+        yield 'dot segment' => ['..'];
+        yield 'path' => ['../stores'];
+        yield 'query' => ['x?status=paid'];
+        yield 'empty' => [''];
+        yield 'almost a uuid' => ['7c3360b5-e8cc-4775-8a13-7324d4f1296'];
+    }
+
+    #[\PHPUnit\Framework\Attributes\DataProvider('notInvoiceIds')]
+    public function testRefusesAnInvoiceIdThatIsNoUuidBeforeSendingAnything(string $id): void
+    {
+        $client = $this->client();
+        try {
+            $client->invoices()->get($id);
+            self::fail('no exception');
+        } catch (\InvalidArgumentException) {
+            self::assertSame([], $this->http->requests);
+        }
     }
 
     public function testListsAPageWithItsFilters(): void

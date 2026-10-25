@@ -27,7 +27,11 @@ final class Invoices
 
     public function get(string $invoiceId): Invoice
     {
-        return Invoice::fromFields(Fields::of($this->transport->get('/v1/invoices/' . rawurlencode($invoiceId)), 'invoice'));
+        // Ids are UUIDs; anything else (such as "..") could make the request reach another path with your key.
+        if (preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $invoiceId) !== 1) {
+            throw new \InvalidArgumentException('An invoice id is a UUID, like 7c3360b5-e8cc-4775-8a13-7324d4f1296e');
+        }
+        return Invoice::fromFields(Fields::of($this->transport->get('/v1/invoices/' . $invoiceId), 'invoice'));
     }
 
     /**
