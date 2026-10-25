@@ -1,0 +1,50 @@
+{
+    "name": "stablevoy/stablevoy-php",
+    "description": "PHP client for the Stablevoy API: non-custodial USDT and USDC payments, invoices and signed webhooks.",
+    "type": "library",
+    "license": "MIT",
+    "keywords": ["stablevoy", "usdt", "usdc", "trc20", "stablecoin", "crypto payments", "payment gateway", "webhooks", "tether", "tron"],
+    "homepage": "https://stablevoy.com",
+    "support": {
+        "docs": "https://stablevoy.com/docs/",
+        "source": "https://github.com/stablevoy/stablevoy-php",
+        "issues": "https://github.com/stablevoy/stablevoy-php/issues"
+    },
+    "require": {
+        "php": ">=8.1",
+        "ext-json": "*",
+        "php-http/discovery": "^1.20",
+        "psr/http-client": "^1.0.3",
+        "psr/http-factory": "^1.1"
+    },
+    "require-dev": {
+        "friendsofphp/php-cs-fixer": "^3.95",
+        "guzzlehttp/guzzle": "^7.10 || ^8.3",
+        "nyholm/psr7": "^1.8.2",
+        "phpstan/phpstan": "^2.3",
+        "phpstan/phpstan-phpunit": "^2.1",
+        "phpunit/phpunit": "^10.5 || ^11.5 || ^12.0 || ^13.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Stablevoy\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Stablevoy\\Tests\\": "tests/"
+        }
+    },
+    "config": {
+        "sort-packages": true,
+        "allow-plugins": {
+            "php-http/discovery": false
+        }
+    },
+    "scripts": {
+        "test": "phpunit",
+        "analyse": "phpstan analyse",
+        "cs": "php-cs-fixer fix --dry-run --diff",
+        "check": ["@cs", "@analyse", "@test"]
+    }
+}

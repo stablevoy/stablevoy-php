@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+# Refreshes the OpenAPI snapshot the contract tests read, from the live API.
+set -euo pipefail
+cd "$(dirname "$0")/.."
+curl -fsS https://api.stablevoy.com/v1/openapi.json -o tests/Fixtures/openapi.json
+echo "tests/Fixtures/openapi.json refreshed; run composer test"
