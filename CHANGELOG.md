@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.1.0
+
+- `Client::create()` now talks over ext-curl with a timeout: every attempt is limited to 30 seconds from connecting to the last byte (`timeoutSeconds`, at most 600). Before, it used whatever PSR-18 client was installed, and Guzzle, for one, has no timeout by default, so a server that never answered could hang a request forever. A timed-out attempt is retried where a repeat is safe, otherwise reported as a `TransportException`.
+- Requires ext-curl. A PSR-18 client is no longer needed for `Client::create()`, only PSR-17 message factories (Guzzle and Symfony projects have them, or `nyholm/psr7`). `Client::fromPsr()` is unchanged; set the timeout on the client you pass.
+- Security review of the new client: redirects are never followed, certificates and host names are always verified, only http and https are spoken (so a `file://` URL cannot be read), and curl error messages never carry the API key.
+
 ## 1.0.1
 
 Security hardening:

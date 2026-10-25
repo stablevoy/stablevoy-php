@@ -24,7 +24,7 @@ final class InvoicesTest extends ApiTestCase
         self::assertSame('Bearer sk_test_key', $request->getHeaderLine('Authorization'));
         self::assertSame('order-1042', $request->getHeaderLine('Idempotency-Key'));
         self::assertSame('application/json', $request->getHeaderLine('Content-Type'));
-        self::assertStringStartsWith('stablevoy-php/1.0.1 PHP/', $request->getHeaderLine('User-Agent'));
+        self::assertStringStartsWith('stablevoy-php/1.1.0 PHP/', $request->getHeaderLine('User-Agent'));
         self::assertSame(['amountUsdCents' => 1999, 'externalReference' => 'order-1042', 'returnUrl' => 'https://shop.example/thanks'], json_decode((string) $request->getBody(), true));
         self::assertSame($example['checkoutUrl'], $created->checkoutUrl);
         self::assertSame($example['id'], $created->invoice->id);

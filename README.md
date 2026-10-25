@@ -5,7 +5,7 @@
 
 PHP client for [Stablevoy](https://stablevoy.com), the non-custodial gateway for USDT and USDC payments. Customers pay on chain and the money goes straight to your own wallet: USDC and USDT on Base, Arbitrum, Optimism, Avalanche, Polygon and BNB Chain, and USDT (TRC20) on Tron with no fee.
 
-The library creates invoices, reads them, and verifies the signed webhooks that tell your shop an order is paid. It works with any PSR-18 HTTP client (Guzzle, Symfony HttpClient and others) and needs PHP 8.1 or newer.
+The library creates invoices, reads them, and verifies the signed webhooks that tell your shop an order is paid. It talks to the API over ext-curl, or over any PSR-18 HTTP client you pass, and needs PHP 8.1 or newer.
 
 ## Install
 
@@ -13,7 +13,7 @@ The library creates invoices, reads them, and verifies the signed webhooks that 
 composer require stablevoy/stablevoy-php
 ```
 
-If your project has no PSR-18 HTTP client yet, add one, for example `composer require guzzlehttp/guzzle`.
+The library needs PSR-17 HTTP message factories. Projects with Guzzle or Symfony already have them; otherwise add `composer require nyholm/psr7`.
 
 ## Create an invoice and send the buyer to pay
 
@@ -83,11 +83,21 @@ use Stablevoy\Http\RetryPolicy;
 $stablevoy = Client::create($apiKey, new ClientOptions(retries: new RetryPolicy(maxRetries: 3, maxWaitSeconds: 30)));
 ```
 
+## Timeout
+
+Every attempt is limited to 30 seconds, from connecting to the last byte of the answer, so a server that does not answer cannot hang your checkout. A timed-out attempt is retried where a repeat is safe, otherwise it is a `TransportException`. Set another limit, up to 600 seconds, as the third argument:
+
+```php
+$stablevoy = Client::create($apiKey, new ClientOptions(), timeoutSeconds: 10);
+```
+
 ## Your own HTTP client
 
 ```php
 $stablevoy = Client::fromPsr($apiKey, $psr18Client, $requestFactory, $streamFactory);
 ```
+
+Then the timeout is your client's setting. Set one: Guzzle, for example, waits forever by default (`new GuzzleHttp\Client(['timeout' => 30, 'connect_timeout' => 10])`).
 
 ## Links
 

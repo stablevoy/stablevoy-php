@@ -6,11 +6,11 @@ namespace Stablevoy;
 
 use Http\Discovery\Exception\NotFoundException as DiscoveryNotFound;
 use Http\Discovery\Psr17FactoryDiscovery;
-use Http\Discovery\Psr18ClientDiscovery;
 use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\RequestFactoryInterface;
 use Psr\Http\Message\StreamFactoryInterface;
 use Stablevoy\Exception\ConfigurationException;
+use Stablevoy\Http\CurlHttpClient;
 use Stablevoy\Http\ErrorFactory;
 use Stablevoy\Http\HttpTransport;
 use Stablevoy\Http\Transport;
@@ -19,12 +19,12 @@ use Stablevoy\Resource\Platform;
 use Stablevoy\Resource\Stores;
 
 /**
- * The Stablevoy API. Build it with Client::create('sk_live_...') when a PSR-18 HTTP client is installed (Guzzle,
- * Symfony HttpClient and others), or with Client::fromPsr() to pass your own.
+ * The Stablevoy API. Build it with Client::create('sk_live_...'), which talks over ext-curl with a timeout, or with
+ * Client::fromPsr() to pass your own PSR-18 client (then its timeout is yours to set).
  */
 final class Client
 {
-    public const VERSION = '1.0.1';
+    public const VERSION = '1.1.0';
 
     public function __construct(
         private readonly Invoices $invoices,
@@ -32,14 +32,20 @@ final class Client
         private readonly Platform $platform,
     ) {}
 
-    /** Finds an installed PSR-18 client and PSR-17 factories; fails loudly when there is none. */
-    public static function create(string $apiKey, ClientOptions $options = new ClientOptions()): self
+    /**
+     * Talks over ext-curl; every attempt is limited to $timeoutSeconds (30 by default, at most 600) from connecting to
+     * the last byte. Finds installed PSR-17 factories for the messages and fails loudly when there are none.
+     */
+    public static function create(string $apiKey, ClientOptions $options = new ClientOptions(), float $timeoutSeconds = 30.0): self
     {
         try {
-            return self::fromPsr($apiKey, Psr18ClientDiscovery::find(), Psr17FactoryDiscovery::findRequestFactory(), Psr17FactoryDiscovery::findStreamFactory(), $options);
+            $requests = Psr17FactoryDiscovery::findRequestFactory();
+            $responses = Psr17FactoryDiscovery::findResponseFactory();
+            $streams = Psr17FactoryDiscovery::findStreamFactory();
         } catch (DiscoveryNotFound $e) {
-            throw new ConfigurationException('No PSR-18 HTTP client is installed. Run "composer require guzzlehttp/guzzle" (or any PSR-18 client), or pass yours to Client::fromPsr().', 0, $e);
+            throw new ConfigurationException('No PSR-17 HTTP message factories are installed. Run "composer require nyholm/psr7" (Guzzle and Symfony projects already have them).', 0, $e);
         }
+        return self::fromPsr($apiKey, new CurlHttpClient($responses, $streams, $timeoutSeconds), $requests, $streams, $options);
     }
 
     public static function fromPsr(string $apiKey, ClientInterface $http, RequestFactoryInterface $requests, StreamFactoryInterface $streams, ClientOptions $options = new ClientOptions()): self
