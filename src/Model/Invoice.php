@@ -26,6 +26,8 @@ final class Invoice
         public readonly \DateTimeImmutable $createdAt,
         public readonly array $depositAddresses,
         public readonly array $payments,
+        /** Where the invoice came from; null only from an API older than 31 October 2026, which did not send it. */
+        public readonly ?InvoiceSource $source = null,
     ) {}
 
     public static function fromFields(Fields $f): self
@@ -53,6 +55,7 @@ final class Invoice
                 $f->list('payments'),
                 array_keys($f->list('payments')),
             ),
+            array_key_exists('source', $f->raw()) ? InvoiceSource::fromNullableFields($f->raw()['source'] === null ? null : $f->object('source')) : null,
         );
     }
 

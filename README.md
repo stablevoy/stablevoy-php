@@ -45,6 +45,18 @@ foreach ($stablevoy->invoices()->all(status: 'paid') as $invoice) {
 }
 ```
 
+Narrow the list by source, created days (UTC, both ends included) or a search by invoice id or the start of your order reference. Each invoice says where it came from:
+
+```php
+use Stablevoy\Model\InvoiceFilter;
+use Stablevoy\Model\InvoiceSource;
+
+$filter = new InvoiceFilter(source: InvoiceSource::PAYMENT_LINK, createdFrom: '2026-11-01', createdTo: '2026-11-30');
+foreach ($stablevoy->invoices()->all(filter: $filter) as $invoice) {
+    echo $invoice->id, ' ', $invoice->source?->kind, PHP_EOL;
+}
+```
+
 ## Verify webhooks
 
 Stablevoy posts an event to your webhook URL when an invoice is paid, overpaid, underpaid, expired, paid late or put on hold. Check the signature before you trust it, using the signing secret shown when you set the webhook in the dashboard. Pass the raw body, not decoded JSON.

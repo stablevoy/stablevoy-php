@@ -24,7 +24,7 @@ use Stablevoy\Resource\Stores;
  */
 final class Client
 {
-    public const VERSION = '1.1.0';
+    public const VERSION = '1.2.0';
 
     public function __construct(
         private readonly Invoices $invoices,

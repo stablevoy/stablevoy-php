@@ -9,6 +9,7 @@ use Stablevoy\Model\CreatedInvoice;
 use Stablevoy\Model\CreateInvoice;
 use Stablevoy\Model\Fields;
 use Stablevoy\Model\Invoice;
+use Stablevoy\Model\InvoiceFilter;
 use Stablevoy\Model\InvoicePage;
 
 /** Invoices of the store the API key belongs to. */
@@ -38,12 +39,16 @@ final class Invoices
      * One page of invoices, newest first.
      *
      * @param int $limit 1 to 100
-     * @param string|null $status only invoices in this status (see InvoiceStatus)
+     * @param string|null $status only invoices in this status (see InvoiceStatus); or use $filter
+     * @param InvoiceFilter|null $filter status, source, created days and search
      */
-    public function list(int $limit = 50, ?string $cursor = null, ?string $status = null): InvoicePage
+    public function list(int $limit = 50, ?string $cursor = null, ?string $status = null, ?InvoiceFilter $filter = null): InvoicePage
     {
         if ($limit < 1 || $limit > 100) {
             throw new \InvalidArgumentException('limit must be between 1 and 100');
+        }
+        if ($status !== null && $filter?->status !== null) {
+            throw new \InvalidArgumentException('Pass the status either as $status or in the filter, not both');
         }
         $query = ['limit' => $limit];
         if ($cursor !== null) {
@@ -52,6 +57,7 @@ final class Invoices
         if ($status !== null) {
             $query['status'] = $status;
         }
+        $query += $filter?->toQuery() ?? [];
         return InvoicePage::fromFields(Fields::of($this->transport->get('/v1/invoices', $query), 'invoices'));
     }
 
@@ -60,11 +66,11 @@ final class Invoices
      *
      * @return \Generator<int, Invoice>
      */
-    public function all(?string $status = null, int $pageSize = 100): \Generator
+    public function all(?string $status = null, int $pageSize = 100, ?InvoiceFilter $filter = null): \Generator
     {
         $cursor = null;
         do {
-            $page = $this->list($pageSize, $cursor, $status);
+            $page = $this->list($pageSize, $cursor, $status, $filter);
             yield from $page->items;
             $cursor = $page->nextCursor;
         } while ($cursor !== null);
