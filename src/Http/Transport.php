@@ -21,4 +21,7 @@ interface Transport
      * @return array<mixed>
      */
     public function post(string $path, array $body, ?string $idempotencyKey = null): array;
+
+    /** A call that answers 204 without a body. Deleting twice does no harm, so it is retried like a read. */
+    public function delete(string $path): void;
 }

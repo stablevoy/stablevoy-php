@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- One-click connect: `ConnectClient::exchange()` redeems a connect code for the shop's API key and webhook secret (`ConnectedStore`). It needs no API key and is never retried, since the code works once.
+- `Stores::revokeCurrentKey()` revokes the key of the client, for a shop that disconnects. It is retried like a read.
+- `Transport` has `delete()`. Your own implementation of `Transport` needs it too.
 - Reads, and creates that carry an idempotency key, are also retried on the gateway errors 502, 504 and 520 to 524. nginx and Cloudflare answer with them for the few seconds the API restarts, so a call made then no longer fails at once. A 500 is still not retried.
 
 ## 1.3.0

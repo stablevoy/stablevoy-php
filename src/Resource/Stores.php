@@ -17,4 +17,13 @@ final class Stores
     {
         return Store::fromFields(Fields::of($this->transport->get('/v1/store'), 'store'));
     }
+
+    /**
+     * Revokes the API key of this client; it stops working at once (use it when the shop disconnects). A key that is
+     * already revoked answers with AuthenticationException, which for a disconnect means the same.
+     */
+    public function revokeCurrentKey(): void
+    {
+        $this->transport->delete('/v1/store/api-keys/current');
+    }
 }

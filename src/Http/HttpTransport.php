@@ -17,14 +17,18 @@ use Stablevoy\Exception\UnexpectedResponseException;
 
 /**
  * The API over any PSR-18 client: Bearer API key, JSON in and out, errors as exceptions, and retries only where a
- * repeat cannot do harm (reads, and creates that carry an Idempotency-Key).
+ * repeat cannot do harm (reads, deletes, and creates that carry an Idempotency-Key).
  */
 final class HttpTransport implements Transport
 {
     private readonly string $baseUrl;
 
+    /**
+     * @param string|null $apiKey null only for the one call made before a shop has a key, the connect exchange
+     *                            (ConnectClient): then no Authorization header is sent
+     */
     public function __construct(
-        private readonly string $apiKey,
+        private readonly ?string $apiKey,
         private readonly ClientInterface $http,
         private readonly RequestFactoryInterface $requests,
         private readonly StreamFactoryInterface $streams,
@@ -34,7 +38,7 @@ final class HttpTransport implements Transport
         private readonly Sleeper $sleeper,
         private readonly ErrorFactory $errors,
     ) {
-        if (trim($apiKey) === '') {
+        if ($apiKey !== null && trim($apiKey) === '') {
             throw new \InvalidArgumentException('The API key is empty. Create one in the Stablevoy dashboard.');
         }
         $this->baseUrl = self::checkedBaseUrl($baseUrl);
@@ -43,7 +47,12 @@ final class HttpTransport implements Transport
     public function get(string $path, array $query = []): array
     {
         $url = $this->baseUrl . $path . ($query === [] ? '' : '?' . http_build_query($query, '', '&', PHP_QUERY_RFC3986));
-        return $this->send($this->requests->createRequest('GET', $url), true);
+        return $this->decode($this->send($this->requests->createRequest('GET', $url), true));
+    }
+
+    public function delete(string $path): void
+    {
+        $this->send($this->requests->createRequest('DELETE', $this->baseUrl . $path), true);
     }
 
     public function post(string $path, array $body, ?string $idempotencyKey = null): array
@@ -54,18 +63,18 @@ final class HttpTransport implements Transport
         if ($idempotencyKey !== null) {
             $request = $request->withHeader('Idempotency-Key', $idempotencyKey);
         }
-        return $this->send($request, $idempotencyKey !== null);
+        return $this->decode($this->send($request, $idempotencyKey !== null));
     }
 
-    /**
-     * @return array<mixed>
-     */
-    private function send(RequestInterface $request, bool $retryable): array
+    /** The first successful answer, or the exception of the last failed attempt. */
+    private function send(RequestInterface $request, bool $retryable): ResponseInterface
     {
         $request = $request
-            ->withHeader('Authorization', 'Bearer ' . $this->apiKey)
             ->withHeader('Accept', 'application/json')
             ->withHeader('User-Agent', $this->userAgent);
+        if ($this->apiKey !== null) {
+            $request = $request->withHeader('Authorization', 'Bearer ' . $this->apiKey);
+        }
         for ($attempt = 1; ; $attempt++) {
             try {
                 $response = $this->http->sendRequest($request);
@@ -81,7 +90,7 @@ final class HttpTransport implements Transport
             }
             $status = $response->getStatusCode();
             if ($status >= 200 && $status < 300) {
-                return $this->decode($response);
+                return $response;
             }
             $error = $this->errors->fromProblem($status, (string) $response->getBody(), self::retryAfter($response));
             $wait = $retryable && self::isRetryable($error) ? $this->retries->waitBefore($attempt, $error->retryAfterSeconds) : null;
