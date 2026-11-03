@@ -100,7 +100,7 @@ In Laravel the same check is `$verifier->verify($request->getContent(), $request
 
 Every exception implements `Stablevoy\Exception\StablevoyException`. API errors are `ApiException` with the HTTP status, a stable `errorCode`, a readable `detail` and a link to the [error catalog](https://stablevoy.com/docs/api/errors/); the ones you may want to handle on their own are `AuthenticationException`, `ValidationException` (with `issues`), `NotFoundException`, `RateLimitedException` and `MaintenanceException`. `TransportException` means no answer at all.
 
-Reads, and creates that carry an idempotency key, are retried on rate limits, maintenance and failed connections, at most twice and only for waits of up to 10 seconds. Anything longer reaches you with `retryAfterSeconds`, so a request never hangs. Change it with `ClientOptions`:
+Reads, and creates that carry an idempotency key, are retried on rate limits, maintenance, gateway errors while the API restarts (502, 504, 520 to 524) and failed connections, at most twice and only for waits of up to 10 seconds. Anything longer reaches you with `retryAfterSeconds`, so a request never hangs. Change it with `ClientOptions`:
 
 ```php
 use Stablevoy\ClientOptions;

@@ -110,9 +110,13 @@ final class HttpTransport implements Transport
         return $url;
     }
 
+    /**
+     * 429 and 503, and the gateway errors nginx and Cloudflare answer while the API restarts (502, 504, 520 to 524). A 500
+     * is a fault of the API, not a moment: repeating it would not help.
+     */
     private static function isRetryable(ApiException $error): bool
     {
-        return $error->status === 429 || $error->status === 503;
+        return in_array($error->status, [429, 502, 503, 504, 520, 521, 522, 523, 524], true);
     }
 
     /**

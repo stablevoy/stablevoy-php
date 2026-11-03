@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Stablevoy\Tests;
 
 use Nyholm\Psr7\Request;
+use Nyholm\Psr7\Response;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Stablevoy\Exception\ApiException;
 use Stablevoy\Exception\AuthenticationException;
@@ -70,7 +71,7 @@ final class ErrorsAndRetriesTest extends ApiTestCase
     public function testNamesAnErrorWithoutAProblemBodyByItsStatus(): void
     {
         try {
-            $this->client(self::json(502, 'Bad Gateway'))->stores()->current();
+            $this->clientWith(RetryPolicy::none(), self::json(502, 'Bad Gateway'))->stores()->current();
             self::fail('no exception');
         } catch (ApiException $e) {
             self::assertSame('http_502', $e->errorCode);
@@ -132,6 +133,52 @@ final class ErrorsAndRetriesTest extends ApiTestCase
             self::assertSame([], $this->sleeper->slept);
             self::assertCount(1, $this->http->requests);
         }
+    }
+
+    /**
+     * @return iterable<string, array{int}>
+     */
+    public static function gatewayErrors(): iterable
+    {
+        foreach ([502, 504, 520, 521, 522, 523, 524] as $status) {
+            yield "HTTP $status" => [$status];
+        }
+    }
+
+    /** While the API restarts, nginx and Cloudflare answer with a gateway error and an HTML page, not a problem document. */
+    #[DataProvider('gatewayErrors')]
+    public function testRetriesAGatewayErrorOnReadsAndIdempotentCreates(int $status): void
+    {
+        $gateway = new Response($status, ['Content-Type' => 'text/html'], '<html>Bad gateway</html>');
+        $client = $this->client($gateway, self::json(200, OpenApi::example('GET', '/v1/limits', 200)));
+        $client->platform()->limits();
+        self::assertSame([1], $this->sleeper->slept);
+
+        $client = $this->client($gateway, self::json(201, OpenApi::example('POST', '/v1/invoices', 201)));
+        $client->invoices()->create(new CreateInvoice(1999), 'order-1');
+        self::assertSame([1], $this->sleeper->slept);
+
+        $client = $this->client($gateway);
+        try {
+            $client->invoices()->create(new CreateInvoice(1999));
+            self::fail('no exception');
+        } catch (ApiException $e) {
+            self::assertSame('http_' . $status, $e->errorCode);
+            self::assertSame([], $this->sleeper->slept);
+        }
+    }
+
+    public function testDoesNotRetryAnInternalError(): void
+    {
+        $client = $this->client(self::json(500, self::problem(500, 'internal_error', 'Something went wrong')));
+        try {
+            $client->platform()->limits();
+            self::fail('no exception');
+        } catch (ApiException $e) {
+            self::assertSame('internal_error', $e->errorCode);
+        }
+        self::assertSame([], $this->sleeper->slept);
+        self::assertCount(1, $this->http->requests);
     }
 
     public function testRetriesAFailedConnectionAndThenReportsIt(): void
