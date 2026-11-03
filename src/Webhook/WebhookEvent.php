@@ -9,7 +9,9 @@ use Stablevoy\Model\Invoice;
 
 /**
  * A verified webhook. Event types: invoice.paid, invoice.overpaid, invoice.underpaid, invoice.expired,
- * invoice.paid_late, invoice.on_hold and webhook.test. Deliveries can repeat: use $id to process each event once.
+ * invoice.paid_late, invoice.on_hold, invoice.payment_flagged and webhook.test. invoice.payment_flagged: a payment of a
+ * settled invoice was flagged by screening; the invoice keeps its status and the event data holds the payment under
+ * 'payment'. Deliveries can repeat: use $id to process each event once.
  */
 final class WebhookEvent
 {

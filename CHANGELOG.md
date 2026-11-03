@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- New webhook type `invoice.payment_flagged`: a payment of an invoice that is already paid, overpaid or paid late was flagged by sanctions screening. The invoice keeps its status; the flagged payment is in the event data under `payment`.
 - The curl client keeps only the headers of the final answer. Behind an HTTPS proxy, or after a 1xx answer, it used to add the headers of those answers too, so two Retry-After values could merge and be read as none.
 - `Store::$connectedPlatform`: the plugin connected to the store in one click, or null. `Network` carries `forwarderImplementation`, `explorerAddressUrl` and `rpcUrl`. `ApiException::$limitUsdCents` gives the limit an amount was refused for. All three were sent by the API and dropped.
 - `Invoices::create()` checks the idempotency key before sending: 1 to 255 printable ASCII characters without spaces, as the API requires. Before, a key with a line break or a non-ASCII letter failed inside the HTTP library with an exception outside `StablevoyException`.
