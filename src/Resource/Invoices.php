@@ -23,6 +23,10 @@ final class Invoices
      */
     public function create(CreateInvoice $request, ?string $idempotencyKey = null): CreatedInvoice
     {
+        // What the API accepts; anything else would be refused there, or break the header on the way.
+        if ($idempotencyKey !== null && preg_match('/^[\x21-\x7e]{1,255}$/', $idempotencyKey) !== 1) {
+            throw new \InvalidArgumentException('The idempotency key must be 1 to 255 printable ASCII characters without spaces, such as your order id');
+        }
         return CreatedInvoice::fromFields(Fields::of($this->transport->post('/v1/invoices', $request->toArray(), $idempotencyKey), 'invoice'));
     }
 

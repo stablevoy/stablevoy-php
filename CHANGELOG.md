@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- `Invoices::create()` checks the idempotency key before sending: 1 to 255 printable ASCII characters without spaces, as the API requires. Before, a key with a line break or a non-ASCII letter failed inside the HTTP library with an exception outside `StablevoyException`.
 - `InvoiceFilter` counted the search length in bytes, so a search of 101 to 200 Cyrillic letters was refused although the API accepts it. It now counts as the API does (UTF-16 units: one per letter, two per emoji), and refuses text that is not UTF-8.
 - Webhook events now carry `source` on their invoice, as the API answers do. Events recorded before 3 November 2026 have none, and still verify.
 - One-click connect: `ConnectClient::exchange()` redeems a connect code for the shop's API key and webhook secret (`ConnectedStore`). It needs no API key and is never retried, since the code works once.

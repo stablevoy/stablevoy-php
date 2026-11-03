@@ -169,6 +169,23 @@ final class InvoicesTest extends ApiTestCase
         }
     }
 
+    /** The API takes 1 to 255 printable ASCII characters without spaces; anything else is refused before it is sent. */
+    public function testRefusesAnIdempotencyKeyTheApiWouldRefuse(): void
+    {
+        $client = $this->client(self::json(201, OpenApi::example('POST', '/v1/invoices', 201)));
+        foreach (['', 'order 1', "order\n1", 'заказ-1', str_repeat('k', 256)] as $i => $key) {
+            try {
+                $client->invoices()->create(new CreateInvoice(1999), $key);
+                self::fail("case $i: no exception");
+            } catch (\InvalidArgumentException $e) {
+                self::assertStringContainsString('idempotency key', $e->getMessage());
+            }
+        }
+        self::assertSame([], $this->http->requests);
+        $client->invoices()->create(new CreateInvoice(1999), str_repeat('k', 255));
+        self::assertSame(str_repeat('k', 255), $this->http->last()->getHeaderLine('Idempotency-Key'));
+    }
+
     /** The API counts the search in UTF-16 units, like JavaScript: a Cyrillic letter is one, an emoji two. */
     public function testCountsTheSearchLengthTheWayTheApiDoes(): void
     {
