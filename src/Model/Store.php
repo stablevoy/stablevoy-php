@@ -9,6 +9,8 @@ final class Store
 {
     /**
      * @param list<string> $enabledNetworks network keys, e.g. "base", "tron"
+     * @param list<string> $networksWithoutPayout enabled networks with no payout wallet for their family (EVM or Tron) on the
+     *                                            account: buyers are not offered them
      */
     public function __construct(
         public readonly string $id,
@@ -21,7 +23,17 @@ final class Store
         public readonly ?string $websiteUrl,
         public readonly ?string $defaultReturnUrl,
         public readonly \DateTimeImmutable $createdAt,
+        public readonly array $networksWithoutPayout,
     ) {}
+
+    /**
+     * False when no enabled network has a payout wallet: every invoice would be refused with payout_address_not_set.
+     * Check it before offering the payment method, and show the merchant networksWithoutPayout when it is not empty.
+     */
+    public function canAcceptPayments(): bool
+    {
+        return array_diff($this->enabledNetworks, $this->networksWithoutPayout) !== [];
+    }
 
     public static function fromFields(Fields $f): self
     {
@@ -36,6 +48,7 @@ final class Store
             $f->nullableString('websiteUrl'),
             $f->nullableString('defaultReturnUrl'),
             $f->date('createdAt'),
+            $f->strings('networksWithoutPayout'),
         );
     }
 }

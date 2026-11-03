@@ -10,6 +10,9 @@ namespace Stablevoy\Exception;
  */
 class ApiException extends \RuntimeException implements StablevoyException
 {
+    /** No enabled network of the store has a payout wallet; Store::canAcceptPayments() tells it in advance. */
+    public const PAYOUT_ADDRESS_NOT_SET = 'payout_address_not_set';
+
     /**
      * @param list<array{path: string, message: string}> $issues the fields a validation error names
      */

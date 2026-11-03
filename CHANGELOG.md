@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.3.0
+
+- `Store` carries `networksWithoutPayout`: the enabled networks with no payout wallet for their family (EVM or Tron) on the account. Buyers are not offered them.
+- `Store::canAcceptPayments()` is false when no enabled network has a payout wallet, so every invoice would be refused. Check it before offering the payment method.
+- `ApiException::PAYOUT_ADDRESS_NOT_SET` names the error code an invoice gets in that case.
+
 ## 1.2.0
 
 - `Invoices::list()` and `all()` take an `InvoiceFilter`: status, source (payment link, WooCommerce, Easy Digital Downloads, WHMCS, an API key made by hand, or not recorded), created between two UTC days, and a search by invoice id or the start of the external reference. The `$status` argument still works.

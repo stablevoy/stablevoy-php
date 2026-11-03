@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Stablevoy\Tests;
 
 use Stablevoy\Exception\UnexpectedResponseException;
+use Stablevoy\Model\Store;
 use Stablevoy\Tests\Support\ApiTestCase;
 use Stablevoy\Tests\Support\OpenApi;
 
@@ -17,6 +18,25 @@ final class PlatformAndStoresTest extends ApiTestCase
         self::assertSame('https://api.stablevoy.com/v1/store', (string) $this->http->last()->getUri());
         self::assertSame($example['name'], $store->name);
         self::assertSame($example['enabledNetworks'], $store->enabledNetworks);
+        self::assertSame([], $store->networksWithoutPayout);
+        self::assertTrue($store->canAcceptPayments());
+    }
+
+    public function testTellsWhetherAnyEnabledNetworkHasAPayoutWallet(): void
+    {
+        $example = OpenApi::example('GET', '/v1/store', 200);
+        $read = fn(array $missing): Store => $this->client(self::json(200, ['enabledNetworks' => ['base', 'tron'], 'networksWithoutPayout' => $missing] + $example))->stores()->current();
+        self::assertSame(['tron'], $read(['tron'])->networksWithoutPayout);
+        self::assertTrue($read(['tron'])->canAcceptPayments());
+        self::assertFalse($read(['base', 'tron'])->canAcceptPayments());
+    }
+
+    public function testRefusesAStoreWithoutThePayoutField(): void
+    {
+        $example = OpenApi::example('GET', '/v1/store', 200);
+        unset($example['networksWithoutPayout']);
+        $this->expectException(UnexpectedResponseException::class);
+        $this->client(self::json(200, $example))->stores()->current();
     }
 
     public function testReadsLimitsPricingAndNetworks(): void
