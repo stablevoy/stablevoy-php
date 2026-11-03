@@ -169,6 +169,21 @@ final class InvoicesTest extends ApiTestCase
         }
     }
 
+    /** The API counts the search in UTF-16 units, like JavaScript: a Cyrillic letter is one, an emoji two. */
+    public function testCountsTheSearchLengthTheWayTheApiDoes(): void
+    {
+        self::assertSame(['q' => str_repeat('я', 200)], (new InvoiceFilter(search: str_repeat('я', 200)))->toQuery());
+        self::assertSame(['q' => str_repeat('😀', 100)], (new InvoiceFilter(search: str_repeat('😀', 100)))->toQuery());
+        foreach ([str_repeat('я', 201), str_repeat('😀', 100) . 'x', "\xff"] as $i => $search) {
+            try {
+                new InvoiceFilter(search: $search);
+                self::fail("case $i: no exception");
+            } catch (\InvalidArgumentException) {
+                self::addToAssertionCount(1);
+            }
+        }
+    }
+
     public function testWalksEveryPageOfAFilter(): void
     {
         $client = $this->client(self::json(200, ['items' => [], 'nextCursor' => null]));

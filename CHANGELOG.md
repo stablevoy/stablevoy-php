@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- `InvoiceFilter` counted the search length in bytes, so a search of 101 to 200 Cyrillic letters was refused although the API accepts it. It now counts as the API does (UTF-16 units: one per letter, two per emoji), and refuses text that is not UTF-8.
 - Webhook events now carry `source` on their invoice, as the API answers do. Events recorded before 3 November 2026 have none, and still verify.
 - One-click connect: `ConnectClient::exchange()` redeems a connect code for the shop's API key and webhook secret (`ConnectedStore`). It needs no API key and is never retried, since the code works once.
 - `Stores::revokeCurrentKey()` revokes the key of the client, for a shop that disconnects. It is retried like a read.

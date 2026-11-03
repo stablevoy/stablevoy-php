@@ -26,9 +26,25 @@ final class InvoiceFilter
                 throw new \InvalidArgumentException("$name must be a date as YYYY-MM-DD");
             }
         }
-        if ($search !== null && ($search === '' || strlen($search) > 200)) {
-            throw new \InvalidArgumentException('search must be 1 to 200 characters');
+        if ($search !== null) {
+            $length = self::utf16Length($search);
+            if ($length === null || $length < 1 || $length > 200) {
+                throw new \InvalidArgumentException('search must be 1 to 200 characters of UTF-8 text');
+            }
         }
+    }
+
+    /**
+     * The length the API checks: UTF-16 units, as JavaScript counts them, so a character outside the basic plane (an
+     * emoji) counts twice. Null for a string that is not UTF-8.
+     */
+    private static function utf16Length(string $text): ?int
+    {
+        $characters = preg_match_all('/./su', $text);
+        if ($characters === false) {
+            return null;
+        }
+        return $characters + (int) preg_match_all('/[\x{10000}-\x{10FFFF}]/u', $text);
     }
 
     /**
