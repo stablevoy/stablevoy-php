@@ -20,6 +20,9 @@ final class PlatformAndStoresTest extends ApiTestCase
         self::assertSame($example['enabledNetworks'], $store->enabledNetworks);
         self::assertSame([], $store->networksWithoutPayout);
         self::assertTrue($store->canAcceptPayments());
+        self::assertSame($example['connectedPlatform'], $store->connectedPlatform);
+        $connected = $this->client(self::json(200, ['connectedPlatform' => 'woocommerce'] + $example))->stores()->current();
+        self::assertSame('woocommerce', $connected->connectedPlatform);
     }
 
     public function testTellsWhetherAnyEnabledNetworkHasAPayoutWallet(): void
@@ -51,6 +54,9 @@ final class PlatformAndStoresTest extends ApiTestCase
         $networks = $client->platform()->networks();
         self::assertNotEmpty($networks);
         self::assertNotEmpty($networks[0]->tokens);
+        $example = OpenApi::example('GET', '/v1/networks', 200)[0];
+        self::assertIsArray($example);
+        self::assertSame([$example['forwarderImplementation'], $example['explorerAddressUrl'], $example['rpcUrl']], [$networks[0]->forwarderImplementation, $networks[0]->explorerAddressUrl, $networks[0]->rpcUrl]);
     }
 
     public function testRefusesNetworksThatAreNotAList(): void

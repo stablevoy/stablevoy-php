@@ -20,6 +20,12 @@ final class Network
         public readonly ?string $factoryAddress,
         public readonly ?string $explorerUrl,
         public readonly array $tokens,
+        /** The forwarder contract the deposit addresses clone; with factoryAddress it is what a manual recovery needs. */
+        public readonly ?string $forwarderImplementation,
+        /** The explorer page of an address is this followed by the address. */
+        public readonly ?string $explorerAddressUrl,
+        /** A public RPC endpoint of the network. */
+        public readonly ?string $rpcUrl,
     ) {}
 
     public static function fromFields(Fields $f): self
@@ -35,6 +41,9 @@ final class Network
             $f->nullableString('factoryAddress'),
             $f->nullableString('explorerUrl'),
             array_map(static fn(mixed $item, int $i): Token => Token::fromFields(Fields::of($item, $f->path('tokens') . "[$i]")), $tokens, array_keys($tokens)),
+            $f->nullableString('forwarderImplementation'),
+            $f->nullableString('explorerAddressUrl'),
+            $f->nullableString('rpcUrl'),
         );
     }
 }

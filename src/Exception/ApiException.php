@@ -23,6 +23,8 @@ class ApiException extends \RuntimeException implements StablevoyException
         public readonly ?string $type,
         public readonly array $issues,
         public readonly ?int $retryAfterSeconds,
+        /** For an amount refused by a limit (amount_below_minimum, amount_above_store_limit, ...): that limit in US cents. */
+        public readonly ?int $limitUsdCents = null,
     ) {
         parent::__construct(sprintf('%s (HTTP %d, %s)', $detail, $status, $errorCode), $status);
     }

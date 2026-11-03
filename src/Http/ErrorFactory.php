@@ -30,7 +30,8 @@ final class ErrorFactory
             $status === 400 || $status === 422 => ValidationException::class,
             default => ApiException::class,
         };
-        return new $class($status, $code, $detail, $type, $issues, $retryAfterSeconds);
+        $limit = is_int($problem['limitUsdCents'] ?? null) ? $problem['limitUsdCents'] : null;
+        return new $class($status, $code, $detail, $type, $issues, $retryAfterSeconds, $limit);
     }
 
     /**

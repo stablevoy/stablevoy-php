@@ -68,6 +68,23 @@ final class ErrorsAndRetriesTest extends ApiTestCase
         }
     }
 
+    public function testGivesTheLimitAnAmountWasRefusedFor(): void
+    {
+        $refused = self::problem(422, 'amount_above_store_limit', 'The amount is above the store limit.') + ['limitUsdCents' => 50000];
+        try {
+            $this->client(self::json(422, $refused))->invoices()->create(new CreateInvoice(99999));
+            self::fail('no exception');
+        } catch (ValidationException $e) {
+            self::assertSame(50000, $e->limitUsdCents);
+        }
+        try {
+            $this->client(self::json(404, self::problem(404, 'not_found', 'Invoice not found')))->invoices()->get('7c3360b5-e8cc-4775-8a13-7324d4f1296e');
+            self::fail('no exception');
+        } catch (NotFoundException $e) {
+            self::assertNull($e->limitUsdCents);
+        }
+    }
+
     public function testNamesAnErrorWithoutAProblemBodyByItsStatus(): void
     {
         try {

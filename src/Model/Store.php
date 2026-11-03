@@ -24,6 +24,8 @@ final class Store
         public readonly ?string $defaultReturnUrl,
         public readonly \DateTimeImmutable $createdAt,
         public readonly array $networksWithoutPayout,
+        /** The plugin connected to the store in one click (woocommerce, edd, whmcs), or null. */
+        public readonly ?string $connectedPlatform,
     ) {}
 
     /**
@@ -49,6 +51,7 @@ final class Store
             $f->nullableString('defaultReturnUrl'),
             $f->date('createdAt'),
             $f->strings('networksWithoutPayout'),
+            $f->nullableString('connectedPlatform'),
         );
     }
 }
