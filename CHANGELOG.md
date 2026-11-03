@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.4.0
 
 - New webhook type `invoice.payment_flagged`: a payment of an invoice that is already paid, overpaid or paid late was flagged by sanctions screening. The invoice keeps its status; the flagged payment is in the event data under `payment`.
 - The curl client keeps only the headers of the final answer. Behind an HTTPS proxy, or after a 1xx answer, it used to add the headers of those answers too, so two Retry-After values could merge and be read as none.

@@ -90,7 +90,7 @@ $stablevoy->stores()->revokeCurrentKey();
 
 ## Verify webhooks
 
-Stablevoy posts an event to your webhook URL when an invoice is paid, overpaid, underpaid, expired, paid late or put on hold. Check the signature before you trust it, using the signing secret shown when you set the webhook in the dashboard. Pass the raw body, not decoded JSON.
+Stablevoy posts an event to your webhook URL when an invoice is paid, overpaid, underpaid, expired, paid late or put on hold. One more, `invoice.payment_flagged`, comes when a later transfer to an invoice that is already paid is flagged by sanctions screening: the invoice keeps its paid status, so this event is not a new payment; the flagged transfer is in `$event->data['payment']`. Check the signature before you trust it, using the signing secret shown when you set the webhook in the dashboard. Pass the raw body, not decoded JSON.
 
 ```php
 use Stablevoy\Exception\SignatureException;
