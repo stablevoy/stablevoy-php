@@ -42,8 +42,7 @@ final class CurlHttpClient implements ClientInterface
         foreach ($request->getHeaders() as $name => $values) {
             $headers[] = $name . ': ' . implode(', ', $values);
         }
-        /** @var list<array{string, string}> $received */
-        $received = [];
+        $received = new CurlHeaderLines();
         $handle = curl_init();
         curl_setopt_array($handle, [
             CURLOPT_URL => $url,
@@ -57,13 +56,7 @@ final class CurlHttpClient implements ClientInterface
             CURLOPT_NOSIGNAL => true,
             CURLOPT_TIMEOUT_MS => (int) ceil($this->timeoutSeconds * 1000),
             CURLOPT_CONNECTTIMEOUT_MS => (int) ceil(min($this->timeoutSeconds, self::CONNECT_TIMEOUT_SECONDS) * 1000),
-            CURLOPT_HEADERFUNCTION => static function (\CurlHandle $handle, string $line) use (&$received): int {
-                $parts = explode(':', $line, 2);
-                if (count($parts) === 2) {
-                    $received[] = [trim($parts[0]), trim($parts[1])];
-                }
-                return strlen($line);
-            },
+            CURLOPT_HEADERFUNCTION => static fn(\CurlHandle $handle, string $line): int => $received->add($line),
         ]);
         $body = (string) $request->getBody();
         if ($body !== '') {
@@ -75,7 +68,7 @@ final class CurlHttpClient implements ClientInterface
             throw new CurlNetworkException(curl_error($handle), curl_errno($handle), $request);
         }
         $response = $this->responses->createResponse((int) curl_getinfo($handle, CURLINFO_RESPONSE_CODE));
-        foreach ($received as [$name, $value]) {
+        foreach ($received->headers() as [$name, $value]) {
             $response = $response->withAddedHeader($name, $value);
         }
         return $response->withBody($this->streams->createStream($answer));
