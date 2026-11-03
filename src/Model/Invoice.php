@@ -26,7 +26,7 @@ final class Invoice
         public readonly \DateTimeImmutable $createdAt,
         public readonly array $depositAddresses,
         public readonly array $payments,
-        /** Where the invoice came from; null only from an API older than 31 October 2026, which did not send it. */
+        /** Where the invoice came from; null only on invoices from an API older than 31 October 2026 and on webhook events recorded before 3 November 2026, which did not carry it. */
         public readonly ?InvoiceSource $source = null,
     ) {}
 

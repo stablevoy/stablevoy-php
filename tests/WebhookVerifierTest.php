@@ -48,6 +48,17 @@ final class WebhookVerifierTest extends TestCase
         self::assertSame('Test event from Stablevoy, café', $event->data['message']);
     }
 
+    public function testReadsTheSourceOfAnInvoiceEventAndAcceptsAnOlderEventWithoutIt(): void
+    {
+        [$old, , $current] = $this->vectors['cases'];
+        $verifier = new Verifier($this->vectors['secret'], 300, new FixedClock($current['timestamp']));
+        $source = $verifier->verify($current['body'], $current['header'])->invoice?->source;
+        self::assertSame(['plugin', 'woocommerce', '2f6a8c1e-4b3d-4e5f-9a7b-8c9d0e1f2a3b'], [$source?->kind, $source?->platform, $source?->apiKeyId]);
+
+        $verifier = new Verifier($this->vectors['secret'], 300, new FixedClock($old['timestamp']));
+        self::assertNull($verifier->verify($old['body'], $old['header'])->invoice?->source);
+    }
+
     /**
      * @return iterable<string, array{string, string, string}>
      */

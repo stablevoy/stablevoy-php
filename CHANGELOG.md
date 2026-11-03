@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Webhook events now carry `source` on their invoice, as the API answers do. Events recorded before 3 November 2026 have none, and still verify.
 - One-click connect: `ConnectClient::exchange()` redeems a connect code for the shop's API key and webhook secret (`ConnectedStore`). It needs no API key and is never retried, since the code works once.
 - `Stores::revokeCurrentKey()` revokes the key of the client, for a shop that disconnects. It is retried like a read.
 - `Transport` has `delete()`. Your own implementation of `Transport` needs it too.
