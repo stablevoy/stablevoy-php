@@ -34,6 +34,31 @@ final class PlatformAndStoresTest extends ApiTestCase
         self::assertFalse($read(['base', 'tron'])->canAcceptPayments());
     }
 
+    public function testReadsTheEvmPayoutStatusAndTheNetworksItBlocks(): void
+    {
+        $example = OpenApi::example('GET', '/v1/store', 200);
+        $store = $this->client(self::json(200, $example))->stores()->current();
+        self::assertSame($example['evmPayoutStatus'], $store->evmPayoutStatus);
+        self::assertSame([], $store->evmNetworksBlocked);
+        self::assertFalse($store->evmPayoutNeedsReview());
+
+        $read = fn(array $fields): Store => $this->client(self::json(200, $fields + ['enabledNetworks' => ['base', 'tron'], 'networksWithoutPayout' => []] + $example))->stores()->current();
+        $blocked = $read(['evmPayoutStatus' => Store::EVM_PAYOUT_UNACKNOWLEDGED, 'evmNetworksBlocked' => ['base']]);
+        self::assertTrue($blocked->evmPayoutNeedsReview());
+        self::assertSame(['base'], $blocked->evmNetworksBlocked);
+        self::assertTrue($blocked->canAcceptPayments());
+        self::assertFalse($read(['evmPayoutStatus' => Store::EVM_PAYOUT_UNACKNOWLEDGED, 'evmNetworksBlocked' => ['base'], 'networksWithoutPayout' => ['tron']])->canAcceptPayments());
+        self::assertNull($read(['evmPayoutStatus' => null])->evmPayoutStatus);
+    }
+
+    public function testRefusesAStoreWithoutTheEvmPayoutFields(): void
+    {
+        $example = OpenApi::example('GET', '/v1/store', 200);
+        unset($example['evmNetworksBlocked']);
+        $this->expectException(UnexpectedResponseException::class);
+        $this->client(self::json(200, $example))->stores()->current();
+    }
+
     public function testRefusesAStoreWithoutThePayoutField(): void
     {
         $example = OpenApi::example('GET', '/v1/store', 200);

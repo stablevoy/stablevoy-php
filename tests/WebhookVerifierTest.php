@@ -48,6 +48,20 @@ final class WebhookVerifierTest extends TestCase
         self::assertSame('Test event from Stablevoy, café', $event->data['message']);
     }
 
+    public function testGivesTheDataOfAPayoutAttentionEventWithoutAnInvoice(): void
+    {
+        $case = $this->vectors['cases'][3];
+        self::assertSame('store.payout_attention', $case['name']);
+        $event = (new Verifier($this->vectors['secret'], 300, new FixedClock($case['timestamp'])))->verify($case['body'], $case['header']);
+        self::assertSame('store.payout_attention', $event->type);
+        self::assertNull($event->invoice);
+        $payout = $event->data['payout'];
+        self::assertIsArray($payout);
+        self::assertSame('unacknowledged', $payout['status']);
+        self::assertSame(['base', 'arbitrum'], $payout['blockedNetworks']);
+        self::assertSame('https://stablevoy.com/app/', $payout['dashboardUrl']);
+    }
+
     public function testReadsTheSourceOfAnInvoiceEventAndAcceptsAnOlderEventWithoutIt(): void
     {
         [$old, , $current] = $this->vectors['cases'];

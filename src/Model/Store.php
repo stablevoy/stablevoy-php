@@ -7,10 +7,17 @@ namespace Stablevoy\Model;
 /** The store the API key belongs to. */
 final class Store
 {
+    public const EVM_PAYOUT_PLAIN = 'plain';
+    public const EVM_PAYOUT_ACKNOWLEDGED = 'acknowledged';
+    public const EVM_PAYOUT_UNACKNOWLEDGED = 'unacknowledged';
+    public const EVM_PAYOUT_UNCHECKED = 'unchecked';
+
     /**
      * @param list<string> $enabledNetworks network keys, e.g. "base", "tron"
      * @param list<string> $networksWithoutPayout enabled networks with no payout wallet for their family (EVM or Tron) on the
      *                                            account: buyers are not offered them
+     * @param list<string> $evmNetworksBlocked enabled EVM networks new invoices leave out because $evmPayoutStatus is
+     *                                         unacknowledged; empty otherwise
      */
     public function __construct(
         public readonly string $id,
@@ -26,15 +33,34 @@ final class Store
         public readonly array $networksWithoutPayout,
         /** The plugin connected to the store in one click (woocommerce, edd, whmcs), or null. */
         public readonly ?string $connectedPlatform,
+        /**
+         * The EVM payout wallet as last read on every EVM network: plain (a regular wallet), acknowledged (a smart contract
+         * wallet or EIP-7702 delegation the merchant confirmed), unacknowledged (not confirmed, or changed since: the EVM
+         * networks are left out of new invoices until the merchant reviews it in the dashboard), unchecked (not read yet),
+         * or null when the account has no EVM payout wallet.
+         */
+        public readonly ?string $evmPayoutStatus,
+        public readonly array $evmNetworksBlocked,
     ) {}
 
     /**
-     * False when no enabled network has a payout wallet: every invoice would be refused with payout_address_not_set.
-     * Check it before offering the payment method, and show the merchant networksWithoutPayout when it is not empty.
+     * True while the EVM payout wallet is not confirmed in the Stablevoy dashboard: show the merchant evmNetworksBlocked
+     * and send them to the dashboard. A store.payout_attention webhook tells when this changes.
+     */
+    public function evmPayoutNeedsReview(): bool
+    {
+        return $this->evmPayoutStatus === self::EVM_PAYOUT_UNACKNOWLEDGED;
+    }
+
+    /**
+     * False when no enabled network can be paid: none has a payout wallet (invoices are refused with
+     * payout_address_not_set), or the only ones left are EVM networks blocked by an unconfirmed EVM payout wallet
+     * (payout_address_unacknowledged). Check it before offering the payment method, and show the merchant
+     * networksWithoutPayout and evmNetworksBlocked when they are not empty.
      */
     public function canAcceptPayments(): bool
     {
-        return array_diff($this->enabledNetworks, $this->networksWithoutPayout) !== [];
+        return array_diff($this->enabledNetworks, $this->networksWithoutPayout, $this->evmNetworksBlocked) !== [];
     }
 
     public static function fromFields(Fields $f): self
@@ -52,6 +78,8 @@ final class Store
             $f->date('createdAt'),
             $f->strings('networksWithoutPayout'),
             $f->nullableString('connectedPlatform'),
+            $f->nullableString('evmPayoutStatus'),
+            $f->strings('evmNetworksBlocked'),
         );
     }
 }

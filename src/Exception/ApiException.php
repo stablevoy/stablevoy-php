@@ -14,6 +14,12 @@ class ApiException extends \RuntimeException implements StablevoyException
     public const PAYOUT_ADDRESS_NOT_SET = 'payout_address_not_set';
 
     /**
+     * The EVM payout wallet is not confirmed in the dashboard (or changed since) and the store has no other network to
+     * offer; Store::evmPayoutNeedsReview() and Store::canAcceptPayments() tell it in advance.
+     */
+    public const PAYOUT_ADDRESS_UNACKNOWLEDGED = 'payout_address_unacknowledged';
+
+    /**
      * @param list<array{path: string, message: string}> $issues the fields a validation error names
      */
     public function __construct(
