@@ -19,6 +19,12 @@ class ApiException extends \RuntimeException implements StablevoyException
      */
     public const PAYOUT_ADDRESS_UNACKNOWLEDGED = 'payout_address_unacknowledged';
 
+    /** Invoices::cancel() on an invoice that already has a payment seen on chain, or is paid, expired, underpaid or on hold. */
+    public const INVOICE_NOT_CANCELLABLE = 'invoice_not_cancellable';
+
+    /** expiresInMinutes is outside the bounds Platform::limits() gives (15 to 10080 minutes). */
+    public const INVALID_INVOICE_LIFETIME = 'invalid_invoice_lifetime';
+
     /**
      * @param list<array{path: string, message: string}> $issues the fields a validation error names
      */

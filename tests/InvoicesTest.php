@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Stablevoy\Tests;
 
+use Stablevoy\Exception\ApiException;
 use Stablevoy\Model\CreateInvoice;
 use Stablevoy\Model\InvoiceFilter;
 use Stablevoy\Model\InvoiceSource;
@@ -26,7 +27,7 @@ final class InvoicesTest extends ApiTestCase
         self::assertSame('Bearer sk_test_key', $request->getHeaderLine('Authorization'));
         self::assertSame('order-1042', $request->getHeaderLine('Idempotency-Key'));
         self::assertSame('application/json', $request->getHeaderLine('Content-Type'));
-        self::assertStringStartsWith('stablevoy-php/1.5.0 PHP/', $request->getHeaderLine('User-Agent'));
+        self::assertStringStartsWith('stablevoy-php/1.6.0 PHP/', $request->getHeaderLine('User-Agent'));
         self::assertSame(['amountUsdCents' => 1999, 'externalReference' => 'order-1042', 'returnUrl' => 'https://shop.example/thanks'], json_decode((string) $request->getBody(), true));
         self::assertSame($example['checkoutUrl'], $created->checkoutUrl);
         self::assertSame($example['id'], $created->invoice->id);
@@ -39,6 +40,47 @@ final class InvoicesTest extends ApiTestCase
         $client->invoices()->create(new CreateInvoice(500));
         self::assertSame(['amountUsdCents' => 500], json_decode((string) $this->http->last()->getBody(), true));
         self::assertFalse($this->http->last()->hasHeader('Idempotency-Key'));
+    }
+
+    public function testSendsTheLifetimeOfTheInvoiceWhenGiven(): void
+    {
+        $client = $this->client(self::json(201, OpenApi::example('POST', '/v1/invoices', 201)));
+        $client->invoices()->create(new CreateInvoice(700, expiresInMinutes: 1440));
+        self::assertSame(['amountUsdCents' => 700, 'expiresInMinutes' => 1440], json_decode((string) $this->http->last()->getBody(), true));
+    }
+
+    public function testCancelsAnInvoiceAndReadsItBack(): void
+    {
+        $example = ['status' => InvoiceStatus::CANCELLED] + OpenApi::example('POST', '/v1/invoices/{invoiceId}/cancel', 200);
+        $client = $this->client(self::json(200, $example));
+
+        $invoice = $client->invoices()->cancel('7c3360b5-e8cc-4775-8a13-7324d4f1296e');
+
+        $request = $this->http->last();
+        self::assertSame('POST', $request->getMethod());
+        self::assertSame('https://api.stablevoy.com/v1/invoices/7c3360b5-e8cc-4775-8a13-7324d4f1296e/cancel', (string) $request->getUri());
+        self::assertFalse($request->hasHeader('Idempotency-Key'));
+        self::assertSame('cancelled', $invoice->status);
+        self::assertFalse($invoice->isPaid());
+    }
+
+    public function testReportsAnInvoiceThatCanNoLongerBeCancelled(): void
+    {
+        $client = $this->client(self::json(409, ['type' => 'https://stablevoy.com/docs/api/errors/#error-invoice_not_cancellable', 'title' => 'invoice not cancellable', 'status' => 409, 'code' => 'invoice_not_cancellable', 'detail' => 'Only an invoice that is still waiting for its first payment can be cancelled.']));
+        try {
+            $client->invoices()->cancel('7c3360b5-e8cc-4775-8a13-7324d4f1296e');
+            self::fail('No exception');
+        } catch (ApiException $e) {
+            self::assertSame(ApiException::INVOICE_NOT_CANCELLABLE, $e->errorCode);
+            self::assertSame(409, $e->status);
+        }
+        self::assertCount(1, $this->http->requests);
+    }
+
+    public function testRefusesToCancelAnInvoiceIdThatIsNoUuid(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->client()->invoices()->cancel('../stores');
     }
 
     public function testRefusesAnAmountThatIsNotPositive(): void

@@ -41,6 +41,10 @@ final class Store
          */
         public readonly ?string $evmPayoutStatus,
         public readonly array $evmNetworksBlocked,
+        /** The account's payout wallets per network family. */
+        public readonly PayoutAddresses $payoutAddresses,
+        /** The store's payment window: how long its invoices can be paid, in minutes, when the request names none; null means the platform default. */
+        public readonly ?int $invoiceLifetimeMinutes,
     ) {}
 
     /**
@@ -80,6 +84,8 @@ final class Store
             $f->nullableString('connectedPlatform'),
             $f->nullableString('evmPayoutStatus'),
             $f->strings('evmNetworksBlocked'),
+            PayoutAddresses::fromFields($f->object('payoutAddresses')),
+            $f->nullableInt('invoiceLifetimeMinutes'),
         );
     }
 }

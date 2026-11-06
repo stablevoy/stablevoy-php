@@ -37,6 +37,8 @@ $created = $stablevoy->invoices()->create(
 header('Location: ' . $created->checkoutUrl);
 ```
 
+The buyer has the store's payment window to pay, or the platform default when the store sets none (`$stablevoy->platform()->limits()` gives it and the bounds). Pass `expiresInMinutes` (15 to 10080, that is 7 days) to set it for one invoice, for example a day or more for an invoice you send by email.
+
 The buyer pays on the hosted payment page. Read an invoice at any time with `$stablevoy->invoices()->get($id)`, or list them:
 
 ```php
@@ -56,6 +58,25 @@ foreach ($stablevoy->invoices()->all(filter: $filter) as $invoice) {
     echo $invoice->id, ' ', $invoice->source?->kind, PHP_EOL;
 }
 ```
+
+## Cancel an unpaid invoice
+
+When the order is cancelled before the buyer pays, cancel its invoice. The payment page then tells the buyer not to pay, and the webhook `invoice.cancelled` is sent. Cancelling it again returns it unchanged.
+
+```php
+use Stablevoy\Exception\ApiException;
+
+try {
+    $invoice = $stablevoy->invoices()->cancel($invoiceId);
+} catch (ApiException $e) {
+    if ($e->errorCode !== ApiException::INVOICE_NOT_CANCELLABLE) {
+        throw $e;
+    }
+    // A payment has already been seen on chain: fulfil or refund the order instead.
+}
+```
+
+Money that still arrives after a cancel reaches your payout wallet as always and makes the invoice `paid_late`.
 
 ## Check the store before going live
 

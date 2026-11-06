@@ -21,7 +21,7 @@ final class ClientTest extends TestCase
 
     public function testTalksToTheConfiguredHostAndNamesTheIntegration(): void
     {
-        $http = new FakeHttpClient(new \Nyholm\Psr7\Response(200, [], '{"minInvoiceUsdCents":500,"maxInvoiceUsdCents":100000}'));
+        $http = new FakeHttpClient(new \Nyholm\Psr7\Response(200, [], '{"minInvoiceUsdCents":500,"maxInvoiceUsdCents":100000,"defaultInvoiceLifetimeMinutes":60,"minInvoiceLifetimeMinutes":15,"maxInvoiceLifetimeMinutes":10080}'));
         $factory = new Psr17Factory();
         $client = Client::fromPsr('sk_test_key', $http, $factory, $factory, new ClientOptions(baseUrl: 'http://localhost:8080/', userAgentSuffix: 'my-shop/2.1'));
         $client->platform()->limits();
@@ -62,7 +62,7 @@ final class ClientTest extends TestCase
     {
         $factory = new Psr17Factory();
         foreach (['https://api.stablevoy.com:8443', 'http://localhost:8080', 'http://127.0.0.1:18700', 'http://[::1]:8080'] as $url) {
-            $http = new FakeHttpClient(new \Nyholm\Psr7\Response(200, [], '{"minInvoiceUsdCents":500,"maxInvoiceUsdCents":100000}'));
+            $http = new FakeHttpClient(new \Nyholm\Psr7\Response(200, [], '{"minInvoiceUsdCents":500,"maxInvoiceUsdCents":100000,"defaultInvoiceLifetimeMinutes":60,"minInvoiceLifetimeMinutes":15,"maxInvoiceLifetimeMinutes":10080}'));
             Client::fromPsr('sk_test_key', $http, $factory, $factory, new ClientOptions(baseUrl: $url))->platform()->limits();
             self::assertSame($url . '/v1/limits', (string) $http->last()->getUri());
         }

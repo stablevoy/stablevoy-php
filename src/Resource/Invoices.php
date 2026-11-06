@@ -32,11 +32,20 @@ final class Invoices
 
     public function get(string $invoiceId): Invoice
     {
-        // Ids are UUIDs; anything else (such as "..") could make the request reach another path with your key.
-        if (preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $invoiceId) !== 1) {
-            throw new \InvalidArgumentException('An invoice id is a UUID, like 7c3360b5-e8cc-4775-8a13-7324d4f1296e');
-        }
+        self::checkId($invoiceId);
         return Invoice::fromFields(Fields::of($this->transport->get('/v1/invoices/' . $invoiceId), 'invoice'));
+    }
+
+    /**
+     * Cancels an invoice that is still waiting for its first payment, for example when the order was cancelled: the
+     * payment page tells the buyer not to pay and the webhook invoice.cancelled is sent. Cancelling it again returns it
+     * unchanged. Once a payment has been seen the API refuses with ApiException::INVOICE_NOT_CANCELLABLE; money that still
+     * arrives after a cancel makes the invoice paid_late. Not retried on its own; calling it again is safe.
+     */
+    public function cancel(string $invoiceId): Invoice
+    {
+        self::checkId($invoiceId);
+        return Invoice::fromFields(Fields::of($this->transport->post('/v1/invoices/' . $invoiceId . '/cancel', []), 'invoice'));
     }
 
     /**
@@ -78,5 +87,13 @@ final class Invoices
             yield from $page->items;
             $cursor = $page->nextCursor;
         } while ($cursor !== null);
+    }
+
+    // Ids are UUIDs; anything else (such as "..") could make the request reach another path with your key.
+    private static function checkId(string $invoiceId): void
+    {
+        if (preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $invoiceId) !== 1) {
+            throw new \InvalidArgumentException('An invoice id is a UUID, like 7c3360b5-e8cc-4775-8a13-7324d4f1296e');
+        }
     }
 }

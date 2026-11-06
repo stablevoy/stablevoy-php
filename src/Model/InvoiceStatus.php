@@ -18,6 +18,8 @@ final class InvoiceStatus
     public const EXPIRED = 'expired';
     public const PAID_LATE = 'paid_late';
     public const ON_HOLD = 'on_hold';
+    /** Cancelled before any payment was seen (Invoices::cancel()); a payment that still arrives makes it paid_late. */
+    public const CANCELLED = 'cancelled';
 
     /** The order can be fulfilled: the full amount, or more, has arrived and is confirmed. */
     public static function isPaid(string $status): bool

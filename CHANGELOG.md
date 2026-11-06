@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.6.0
+
+- `Invoices::cancel($id)` cancels an invoice that is still waiting for its first payment: the payment page tells the buyer not to pay and the webhook `invoice.cancelled` is sent. Cancelling it again returns it unchanged. Once a payment has been seen the API refuses with `ApiException::INVOICE_NOT_CANCELLABLE`; money that still arrives after a cancel makes the invoice `paid_late`. New status `InvoiceStatus::CANCELLED` and webhook type `invoice.cancelled`.
+- `CreateInvoice` takes `expiresInMinutes`: how long the buyer has to pay this invoice, 15 to 10080 minutes (7 days). Outside the bounds the API answers `ApiException::INVALID_INVOICE_LIFETIME`.
+- `Store::$invoiceLifetimeMinutes`: the store's payment window, null for the platform default. `Limits` carries `defaultInvoiceLifetimeMinutes`, `minInvoiceLifetimeMinutes` and `maxInvoiceLifetimeMinutes`.
+- `Store::$payoutAddresses` (`PayoutAddresses` with `evm` and `tron`): the account's payout wallets per network family, null when not set. Read only; they are changed in the dashboard with a wallet signature.
+- These fields need the API of 6 November 2026; an older answer without them is refused as an unexpected response.
+
 ## 1.5.0
 
 - `Store` carries `evmPayoutStatus` (`plain`, `acknowledged`, `unacknowledged`, `unchecked`, or null without an EVM payout wallet, with `Store::EVM_PAYOUT_*` constants) and `evmNetworksBlocked`: the enabled EVM networks new invoices leave out while the EVM payout wallet is not confirmed in the dashboard. `Store::evmPayoutNeedsReview()` tells it.
