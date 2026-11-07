@@ -25,6 +25,12 @@ class ApiException extends \RuntimeException implements StablevoyException
     /** expiresInMinutes is outside the bounds Platform::limits() gives (15 to 10080 minutes). */
     public const INVALID_INVOICE_LIFETIME = 'invalid_invoice_lifetime';
 
+    /** The store already has as many invoices awaiting payment as Platform::limits() allows: cancel unused ones or let them expire. */
+    public const OPEN_INVOICE_LIMIT_REACHED = 'open_invoice_limit_reached';
+
+    /** A list or summary filter the API refuses, such as a summary range longer than 92 days or one that ends before it starts. */
+    public const INVALID_INVOICE_FILTER = 'invalid_invoice_filter';
+
     /**
      * @param list<array{path: string, message: string}> $issues the fields a validation error names
      */

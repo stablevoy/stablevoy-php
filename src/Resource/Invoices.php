@@ -11,6 +11,8 @@ use Stablevoy\Model\Fields;
 use Stablevoy\Model\Invoice;
 use Stablevoy\Model\InvoiceFilter;
 use Stablevoy\Model\InvoicePage;
+use Stablevoy\Model\InvoiceSummary;
+use Stablevoy\Model\SummaryPeriod;
 
 /** Invoices of the store the API key belongs to. */
 final class Invoices
@@ -72,6 +74,36 @@ final class Invoices
         }
         $query += $filter?->toQuery() ?? [];
         return InvoicePage::fromFields(Fields::of($this->transport->get('/v1/invoices', $query), 'invoices'));
+    }
+
+    /**
+     * Totals of the invoices created in a range of UTC days: counts per status, the invoiced amount and the money
+     * received, also per network and token. Pass a period (SummaryPeriod) or both days as YYYY-MM-DD:
+     * summary(period: SummaryPeriod::LAST_7_DAYS) or summary(createdFrom: '2026-10-01', createdTo: '2026-10-31').
+     * One request covers at most 92 days, so ask for a year in four parts; a longer range is refused with
+     * ApiException::INVALID_INVOICE_FILTER. The API allows 30 calls a minute per store.
+     */
+    public function summary(?string $period = null, ?string $createdFrom = null, ?string $createdTo = null): InvoiceSummary
+    {
+        $hasDays = $createdFrom !== null || $createdTo !== null;
+        if (($period !== null) === $hasDays) {
+            throw new \InvalidArgumentException('Pass either period or both createdFrom and createdTo');
+        }
+        if ($period !== null) {
+            if (!in_array($period, SummaryPeriod::ALL, true)) {
+                throw new \InvalidArgumentException('period must be one of ' . implode(', ', SummaryPeriod::ALL));
+            }
+            $query = ['period' => $period];
+        } else {
+            $query = [];
+            foreach (['createdFrom' => $createdFrom, 'createdTo' => $createdTo] as $name => $day) {
+                if ($day === null || preg_match('/^\d{4}-\d{2}-\d{2}$/', $day) !== 1) {
+                    throw new \InvalidArgumentException("$name must be a date as YYYY-MM-DD");
+                }
+                $query[$name] = $day;
+            }
+        }
+        return InvoiceSummary::fromFields(Fields::of($this->transport->get('/v1/invoices/summary', $query), 'summary'));
     }
 
     /**

@@ -12,6 +12,7 @@ use Stablevoy\Http\TransportFactory;
 use Stablevoy\Resource\Invoices;
 use Stablevoy\Resource\Platform;
 use Stablevoy\Resource\Stores;
+use Stablevoy\Resource\UnmatchedTransfers;
 
 /**
  * The Stablevoy API. Build it with Client::create('sk_live_...'), which talks over ext-curl with a timeout, or with
@@ -19,12 +20,13 @@ use Stablevoy\Resource\Stores;
  */
 final class Client
 {
-    public const VERSION = '1.6.0';
+    public const VERSION = '1.7.0';
 
     public function __construct(
         private readonly Invoices $invoices,
         private readonly Stores $stores,
         private readonly Platform $platform,
+        private readonly UnmatchedTransfers $unmatchedTransfers,
     ) {}
 
     /**
@@ -43,7 +45,7 @@ final class Client
 
     public static function fromTransport(Transport $transport): self
     {
-        return new self(new Invoices($transport), new Stores($transport), new Platform($transport));
+        return new self(new Invoices($transport), new Stores($transport), new Platform($transport), new UnmatchedTransfers($transport));
     }
 
     public function invoices(): Invoices
@@ -59,5 +61,10 @@ final class Client
     public function platform(): Platform
     {
         return $this->platform;
+    }
+
+    public function unmatchedTransfers(): UnmatchedTransfers
+    {
+        return $this->unmatchedTransfers;
     }
 }

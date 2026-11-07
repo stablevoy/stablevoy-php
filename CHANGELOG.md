@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.7.0
+
+- `Invoices::summary(period: ...)` or `Invoices::summary(createdFrom: ..., createdTo: ...)`: totals of the invoices created in a range of UTC days (`InvoiceSummary`), with the count per status, the invoiced amount and the money received, also per network and token (`NetworkTotal`). Periods are in `SummaryPeriod`; one request covers at most 92 days, and a longer range is refused with `ApiException::INVALID_INVOICE_FILTER`.
+- `Client::unmatchedTransfers()->list()`: transfers to the payout wallet that matched no invoice, on the networks of the key's store (`UnmatchedTransfer`), each with `sharedWithStores`. Read only; they are attached to an invoice in the dashboard.
+- `Limits` carries `apiKeysPerStore` (`ApiKeysPerStore` with `plugin`, `mcp`, `api`), `openInvoicesPerStore` and `invoicesPerMinutePerStore`. New `ApiException::OPEN_INVOICE_LIMIT_REACHED`. These need the API of 7 November 2026; an older answer without them is refused as an unexpected response.
+- The `Client` constructor takes `UnmatchedTransfers` as a fourth argument; `Client::create()`, `fromPsr()` and `fromTransport()` are unchanged.
+
 ## 1.6.0
 
 - `Invoices::cancel($id)` cancels an invoice that is still waiting for its first payment: the payment page tells the buyer not to pay and the webhook `invoice.cancelled` is sent. Cancelling it again returns it unchanged. Once a payment has been seen the API refuses with `ApiException::INVOICE_NOT_CANCELLABLE`; money that still arrives after a cancel makes the invoice `paid_late`. New status `InvoiceStatus::CANCELLED` and webhook type `invoice.cancelled`.

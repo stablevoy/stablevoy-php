@@ -8,7 +8,7 @@ $path = parse_url(is_string($uri) ? $uri : '/', PHP_URL_PATH);
 switch ($path) {
     case '/v1/limits':
         header('Content-Type: application/json');
-        echo '{"minInvoiceUsdCents":500,"maxInvoiceUsdCents":100000,"defaultInvoiceLifetimeMinutes":60,"minInvoiceLifetimeMinutes":15,"maxInvoiceLifetimeMinutes":10080}';
+        echo '{"minInvoiceUsdCents":500,"maxInvoiceUsdCents":100000,"defaultInvoiceLifetimeMinutes":60,"minInvoiceLifetimeMinutes":15,"maxInvoiceLifetimeMinutes":10080,"apiKeysPerStore":{"plugin":1,"mcp":5,"api":10},"openInvoicesPerStore":1000,"invoicesPerMinutePerStore":60}';
         break;
     case '/echo':
         header('Content-Type: application/json');

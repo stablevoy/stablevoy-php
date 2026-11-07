@@ -15,6 +15,11 @@ final class Limits
         /** The bounds of expiresInMinutes and of a store's payment window. */
         public readonly int $minInvoiceLifetimeMinutes,
         public readonly int $maxInvoiceLifetimeMinutes,
+        public readonly ApiKeysPerStore $apiKeysPerStore,
+        /** Invoices awaiting payment one store may have at once; over it Invoices::create() fails with ApiException::OPEN_INVOICE_LIMIT_REACHED. */
+        public readonly int $openInvoicesPerStore,
+        /** New invoices one store may create per minute; over it the API answers 429 (RateLimitedException). */
+        public readonly int $invoicesPerMinutePerStore,
     ) {}
 
     public static function fromFields(Fields $f): self
@@ -25,6 +30,9 @@ final class Limits
             $f->int('defaultInvoiceLifetimeMinutes'),
             $f->int('minInvoiceLifetimeMinutes'),
             $f->int('maxInvoiceLifetimeMinutes'),
+            ApiKeysPerStore::fromFields($f->object('apiKeysPerStore')),
+            $f->int('openInvoicesPerStore'),
+            $f->int('invoicesPerMinutePerStore'),
         );
     }
 }
