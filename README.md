@@ -213,6 +213,10 @@ $stablevoy = Client::fromPsr($apiKey, $psr18Client, $requestFactory, $streamFact
 
 Then the timeout is your client's setting. Set one: Guzzle, for example, waits forever by default (`new GuzzleHttp\Client(['timeout' => 30, 'connect_timeout' => 10])`).
 
+## Questions and bugs
+
+Ask questions in [GitHub Discussions](https://github.com/orgs/stablevoy/discussions/categories/sdks), category SDKs. Open an issue in this repository for a bug, with the version and the smallest example that shows it. Never paste a key, not even a test one.
+
 ## Links
 
 - [API reference](https://stablevoy.com/docs/api/)
