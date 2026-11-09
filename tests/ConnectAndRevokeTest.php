@@ -55,8 +55,8 @@ final class ConnectAndRevokeTest extends ApiTestCase
     public static function brokenAnswers(): iterable
     {
         $example = OpenApi::example('POST', '/v1/connect/exchange', 200);
-        yield 'not a store key' => [['apiKey' => 'pk_live_1'] + $example, 'connected.apiKey is not an API key (sk_live_ or sk_test_)'];
-        yield 'not a webhook secret' => [['webhookSecret' => 'secret'] + $example, 'connected.webhookSecret is not a webhook secret (whsec_)'];
+        yield 'not a store key' => [['apiKey' => 'pk_live_1'] + $example, 'connected.apiKey is not an API key (svk_live_, svk_test_, or the older sk_live_, sk_test_)'];
+        yield 'not a webhook secret' => [['webhookSecret' => 'secret'] + $example, 'connected.webhookSecret is not a webhook secret (svwhsec_, or the older whsec_)'];
         yield 'no store' => [array_diff_key($example, ['store' => true]), 'connected.store is missing'];
         yield 'no store name' => [['store' => ['id' => 'x']] + $example, 'connected.store.name is missing'];
     }

@@ -169,6 +169,21 @@ http_response_code(200);
 
 In Laravel the same check is `$verifier->verify($request->getContent(), $request->header('X-Stablevoy-Signature', ''))`.
 
+## Check a pasted key
+
+API keys are `svk_live_...` or `svk_test_...` and webhook signing secrets `svwhsec_...`; both end in a checksum. Keys made before this format (`sk_live_`, `sk_test_`, `whsec_`) keep working.
+
+```php
+use Stablevoy\Key\KeyCheck;
+use Stablevoy\Key\KeyFormat;
+
+if (KeyFormat::checkApiKey($input) === KeyCheck::Mistyped) {
+    echo 'A character is wrong or missing: copy the key again from the dashboard.';
+}
+```
+
+`checkApiKey` and `checkWebhookSecret` answer `Ok`, `Mistyped` or `NotAKey`, without any request.
+
 ## Errors and retries
 
 Every exception implements `Stablevoy\Exception\StablevoyException`. API errors are `ApiException` with the HTTP status, a stable `errorCode`, a readable `detail` and a link to the [error catalog](https://stablevoy.com/docs/api/errors/); the ones you may want to handle on their own are `AuthenticationException`, `ValidationException` (with `issues`), `NotFoundException`, `RateLimitedException` and `MaintenanceException`. `TransportException` means no answer at all.
