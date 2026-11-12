@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Stablevoy\Tests;
 
 use Stablevoy\Exception\UnexpectedResponseException;
+use Stablevoy\Model\PayoutSources;
 use Stablevoy\Model\Store;
 use Stablevoy\Tests\Support\ApiTestCase;
 use Stablevoy\Tests\Support\OpenApi;
@@ -58,6 +59,38 @@ final class PlatformAndStoresTest extends ApiTestCase
         self::assertSame('0x' . str_repeat('ab', 20), $store->payoutAddresses->evm);
         self::assertNull($store->payoutAddresses->tron);
         unset($example['payoutAddresses']);
+        $this->expectException(UnexpectedResponseException::class);
+        $this->client(self::json(200, $example))->stores()->current();
+    }
+
+    public function testReadsWhereEachPayoutWalletComesFromTheAccountWalletsAndTheArchiveDate(): void
+    {
+        $example = OpenApi::example('GET', '/v1/store', 200);
+        $store = $this->client(self::json(200, [
+            'payoutSources' => ['evm' => PayoutSources::STORE, 'tron' => null],
+            'accountPayoutAddresses' => ['evm' => '0x' . str_repeat('cd', 20), 'tron' => null],
+            'archivedAt' => '2026-11-10T10:00:00.000Z',
+        ] + $example))->stores()->current();
+        self::assertSame(PayoutSources::STORE, $store->payoutSources->evm);
+        self::assertNull($store->payoutSources->tron);
+        self::assertSame('0x' . str_repeat('cd', 20), $store->accountPayoutAddresses->evm);
+        self::assertEquals(new \DateTimeImmutable('2026-11-10T10:00:00.000Z'), $store->archivedAt);
+        self::assertNull($this->client(self::json(200, $example))->stores()->current()->archivedAt);
+    }
+
+    /** @return iterable<string, array{string}> */
+    public static function newStoreFields(): iterable
+    {
+        yield 'payoutSources' => ['payoutSources'];
+        yield 'accountPayoutAddresses' => ['accountPayoutAddresses'];
+        yield 'archivedAt' => ['archivedAt'];
+    }
+
+    #[\PHPUnit\Framework\Attributes\DataProvider('newStoreFields')]
+    public function testRefusesAStoreWithoutTheNewPayoutFields(string $field): void
+    {
+        $example = OpenApi::example('GET', '/v1/store', 200);
+        unset($example[$field]);
         $this->expectException(UnexpectedResponseException::class);
         $this->client(self::json(200, $example))->stores()->current();
     }

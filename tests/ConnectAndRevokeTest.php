@@ -30,9 +30,20 @@ final class ConnectAndRevokeTest extends ApiTestCase
         return ConnectClient::fromPsr($this->http, $factory, $factory, new ClientOptions(sleeper: $this->sleeper));
     }
 
+    /**
+     * The exchange example of the API document with whole secrets: the document shows shortened ones (svk_live_4f9a...e0f9),
+     * which the SDK rightly refuses, so a real-looking answer uses the older formats the SDK still accepts.
+     *
+     * @return array<mixed>
+     */
+    private static function exchangeAnswer(): array
+    {
+        return ['apiKey' => 'sk_live_example', 'webhookSecret' => 'whsec_example'] + OpenApi::example('POST', '/v1/connect/exchange', 200);
+    }
+
     public function testRedeemsAConnectCodeWithoutAnApiKey(): void
     {
-        $example = OpenApi::example('POST', '/v1/connect/exchange', 200);
+        $example = self::exchangeAnswer();
         $store = $this->connect(self::json(200, $example))->exchange('code-1', 'verifier-1', 'https://shop.example.com');
 
         $request = $this->http->last();
@@ -54,7 +65,7 @@ final class ConnectAndRevokeTest extends ApiTestCase
      */
     public static function brokenAnswers(): iterable
     {
-        $example = OpenApi::example('POST', '/v1/connect/exchange', 200);
+        $example = self::exchangeAnswer();
         yield 'not a store key' => [['apiKey' => 'pk_live_1'] + $example, 'connected.apiKey is not an API key (svk_live_, svk_test_, or the older sk_live_, sk_test_)'];
         yield 'not a webhook secret' => [['webhookSecret' => 'secret'] + $example, 'connected.webhookSecret is not a webhook secret (svwhsec_, or the older whsec_)'];
         yield 'no store' => [array_diff_key($example, ['store' => true]), 'connected.store is missing'];
