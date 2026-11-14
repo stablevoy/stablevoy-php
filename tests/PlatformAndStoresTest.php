@@ -7,6 +7,7 @@ namespace Stablevoy\Tests;
 use Stablevoy\Exception\UnexpectedResponseException;
 use Stablevoy\Model\PayoutSources;
 use Stablevoy\Model\Store;
+use Stablevoy\Model\WebhookHealth;
 use Stablevoy\Tests\Support\ApiTestCase;
 use Stablevoy\Tests\Support\OpenApi;
 
@@ -78,9 +79,43 @@ final class PlatformAndStoresTest extends ApiTestCase
         self::assertNull($this->client(self::json(200, $example))->stores()->current()->archivedAt);
     }
 
+    public function testReadsTheStateOfTheWebhookEndpointNullWithoutAWebhookUrl(): void
+    {
+        $example = OpenApi::example('GET', '/v1/store', 200);
+        $store = $this->client(self::json(200, ['webhookHealth' => [
+            'status' => WebhookHealth::PAUSED,
+            'failingSince' => '2026-11-12T10:00:00.000Z',
+            'failedAttempts' => 31,
+            'pausesAt' => null,
+            'pausedAt' => '2026-11-13T10:00:00.000Z',
+            'pauseReason' => 'Endpoint answered HTTP 500',
+        ]] + $example))->stores()->current();
+        self::assertNotNull($store->webhookHealth);
+        self::assertSame(WebhookHealth::PAUSED, $store->webhookHealth->status);
+        self::assertEquals(new \DateTimeImmutable('2026-11-12T10:00:00.000Z'), $store->webhookHealth->failingSince);
+        self::assertSame(31, $store->webhookHealth->failedAttempts);
+        self::assertNull($store->webhookHealth->pausesAt);
+        self::assertEquals(new \DateTimeImmutable('2026-11-13T10:00:00.000Z'), $store->webhookHealth->pausedAt);
+        self::assertSame('Endpoint answered HTTP 500', $store->webhookHealth->pauseReason);
+        $failing = $this->client(self::json(200, ['webhookHealth' => [
+            'status' => WebhookHealth::FAILING, 'failingSince' => '2026-11-12T10:00:00.000Z', 'failedAttempts' => 12,
+            'pausesAt' => '2026-11-13T10:00:00.000Z', 'pausedAt' => null, 'pauseReason' => null,
+        ]] + $example))->stores()->current();
+        self::assertEquals(new \DateTimeImmutable('2026-11-13T10:00:00.000Z'), $failing->webhookHealth?->pausesAt);
+        self::assertNull($this->client(self::json(200, ['webhookHealth' => null] + $example))->stores()->current()->webhookHealth);
+    }
+
+    public function testRefusesAWebhookHealthWithAWrongField(): void
+    {
+        $example = OpenApi::example('GET', '/v1/store', 200);
+        $this->expectException(UnexpectedResponseException::class);
+        $this->client(self::json(200, ['webhookHealth' => ['status' => 'failing', 'failingSince' => null, 'failedAttempts' => 'many', 'pausesAt' => null, 'pausedAt' => null, 'pauseReason' => null]] + $example))->stores()->current();
+    }
+
     /** @return iterable<string, array{string}> */
     public static function newStoreFields(): iterable
     {
+        yield 'webhookHealth' => ['webhookHealth'];
         yield 'payoutSources' => ['payoutSources'];
         yield 'accountPayoutAddresses' => ['accountPayoutAddresses'];
         yield 'archivedAt' => ['archivedAt'];

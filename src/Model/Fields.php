@@ -122,6 +122,12 @@ final class Fields
         return self::of($this->value($key), $this->path . '.' . $key);
     }
 
+    /** An object or null; the key itself must be there. */
+    public function nullableObject(string $key): ?self
+    {
+        return $this->value($key) === null ? null : $this->object($key);
+    }
+
     /**
      * @return array<mixed> the object as decoded, for data this library does not model
      */

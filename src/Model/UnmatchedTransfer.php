@@ -26,8 +26,9 @@ final class UnmatchedTransfer
         /** Prefix of the transaction page on the block explorer; Tronscan takes the hash without its 0x prefix. */
         public readonly string $explorerTxUrl,
         /**
-         * How many active stores of the account offer this network. The payout wallet belongs to the account, not to one
-         * store, so 1 means the transfer is certainly this store's and more means it may belong to any of that many stores.
+         * How many active stores of the account offer this network and pay out to the same wallet (this one included). A
+         * transfer that matched no invoice is tied to no store, so 1 means it is certainly this store's and more means it may
+         * belong to any of that many stores.
          */
         public readonly int $sharedWithStores,
     ) {}

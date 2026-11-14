@@ -51,6 +51,8 @@ final class Store
         public readonly PayoutAddresses $accountPayoutAddresses,
         /** When the store was archived; null while it is not. The keys of an archived store are revoked. */
         public readonly ?\DateTimeImmutable $archivedAt,
+        /** State of the webhook endpoint (failing, paused); null when the store has no webhook URL. Resumed only in the dashboard. */
+        public readonly ?WebhookHealth $webhookHealth,
     ) {}
 
     /**
@@ -95,6 +97,12 @@ final class Store
             PayoutSources::fromFields($f->object('payoutSources')),
             PayoutAddresses::fromFields($f->object('accountPayoutAddresses')),
             $f->nullableDate('archivedAt'),
+            self::webhookHealth($f->nullableObject('webhookHealth')),
         );
+    }
+
+    private static function webhookHealth(?Fields $f): ?WebhookHealth
+    {
+        return $f === null ? null : WebhookHealth::fromFields($f);
     }
 }
