@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.11.0
+
+- Invoices priced in another currency: `CreateInvoice::inCurrency($amount, $currency, ...)` with the amount in the smallest unit of the currency (4999 is 49.99 EUR), or `new CreateInvoice(null, ..., amount: 4999, currency: 'EUR')`. Give `amountUsdCents` or `amount` with `currency`, never both; `$amountUsdCents` is now nullable for that. The API converts the price once, at creation, rounded up to the cent, and keeps the rate.
+- `Invoice::$pricing` (`InvoicePricing`): the currency, amount, exponent, `usdPerUnit`, `rateSource` (`ecb` or `merchant`) and `rateAt` of an invoice priced in another currency; null for a USD invoice and on webhook events recorded before 19 November 2026.
+- `$client->currencies()->list()`: every supported currency (`Currency`) with its exponent and the market rate in use (`MarketRate`). `$client->currencies()->forStore($storeId)`: the same with the store's own fixed rates (`StoreRate`) and the rate an invoice of the store would use now (`CurrencyRate`). A store's own rate is set in the dashboard only.
+- New `ApiException::EXCHANGE_RATE_UNAVAILABLE` and `ApiException::CURRENCY_NOT_SUPPORTED`.
+- `Client` takes `Currencies` as a fifth constructor argument; `Client::create()`, `Client::fromPsr()` and `Client::fromTransport()` are unchanged.
+
 ## 1.10.0
 
 - `Store::$webhookHealth` (`WebhookHealth`): the state of the store's webhook endpoint, null when the store has no webhook URL. `status` is `WebhookHealth::ACTIVE`, `WebhookHealth::FAILING` (at least 10 failed attempts, `pausesAt` says when it will be paused if it keeps failing) or `WebhookHealth::PAUSED` (failed for 24 hours; new events wait up to 30 days); also `failingSince`, `failedAttempts`, `pausedAt` and `pauseReason`. The merchant resumes a paused endpoint in the dashboard. Needs the API with paused endpoints (November 2026); an older answer without the field is refused as an unexpected response.

@@ -28,6 +28,11 @@ final class Invoice
         public readonly array $payments,
         /** Where the invoice came from; null only on invoices from an API older than 31 October 2026 and on webhook events recorded before 3 November 2026, which did not carry it. */
         public readonly ?InvoiceSource $source = null,
+        /**
+         * The price and rate of an invoice created in another currency than USD (amountUsdCents is that price converted at
+         * creation, rounded up to the cent). Null when priced in USD, and on webhook events recorded before 19 November 2026.
+         */
+        public readonly ?InvoicePricing $pricing = null,
     ) {}
 
     public static function fromFields(Fields $f): self
@@ -56,6 +61,7 @@ final class Invoice
                 array_keys($f->list('payments')),
             ),
             array_key_exists('source', $f->raw()) ? InvoiceSource::fromNullableFields($f->raw()['source'] === null ? null : $f->object('source')) : null,
+            array_key_exists('pricing', $f->raw()) && $f->raw()['pricing'] !== null ? InvoicePricing::fromFields($f->object('pricing')) : null,
         );
     }
 

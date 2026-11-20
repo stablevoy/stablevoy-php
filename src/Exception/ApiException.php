@@ -28,6 +28,12 @@ class ApiException extends \RuntimeException implements StablevoyException
     /** The store already has as many invoices awaiting payment as Platform::limits() allows: cancel unused ones or let them expire. */
     public const OPEN_INVOICE_LIMIT_REACHED = 'open_invoice_limit_reached';
 
+    /** No usable rate for the invoice currency right now: the market rate is missing or too old and the store has no own rate. Retry later or price in USD. */
+    public const EXCHANGE_RATE_UNAVAILABLE = 'exchange_rate_unavailable';
+
+    /** The currency is not one of Currencies::list(). */
+    public const CURRENCY_NOT_SUPPORTED = 'currency_not_supported';
+
     /** A list or summary filter the API refuses, such as a summary range longer than 92 days or one that ends before it starts. */
     public const INVALID_INVOICE_FILTER = 'invalid_invoice_filter';
 

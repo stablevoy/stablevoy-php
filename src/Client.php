@@ -9,6 +9,7 @@ use Psr\Http\Message\RequestFactoryInterface;
 use Psr\Http\Message\StreamFactoryInterface;
 use Stablevoy\Http\Transport;
 use Stablevoy\Http\TransportFactory;
+use Stablevoy\Resource\Currencies;
 use Stablevoy\Resource\Invoices;
 use Stablevoy\Resource\Platform;
 use Stablevoy\Resource\Stores;
@@ -20,13 +21,14 @@ use Stablevoy\Resource\UnmatchedTransfers;
  */
 final class Client
 {
-    public const VERSION = '1.10.0';
+    public const VERSION = '1.11.0';
 
     public function __construct(
         private readonly Invoices $invoices,
         private readonly Stores $stores,
         private readonly Platform $platform,
         private readonly UnmatchedTransfers $unmatchedTransfers,
+        private readonly Currencies $currencies,
     ) {}
 
     /**
@@ -45,7 +47,7 @@ final class Client
 
     public static function fromTransport(Transport $transport): self
     {
-        return new self(new Invoices($transport), new Stores($transport), new Platform($transport), new UnmatchedTransfers($transport));
+        return new self(new Invoices($transport), new Stores($transport), new Platform($transport), new UnmatchedTransfers($transport), new Currencies($transport));
     }
 
     public function invoices(): Invoices
@@ -66,5 +68,10 @@ final class Client
     public function unmatchedTransfers(): UnmatchedTransfers
     {
         return $this->unmatchedTransfers;
+    }
+
+    public function currencies(): Currencies
+    {
+        return $this->currencies;
     }
 }
