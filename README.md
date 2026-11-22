@@ -111,6 +111,26 @@ $october = $stablevoy->invoices()->summary(createdFrom: '2026-10-01', createdTo:
 
 `invoicedUsdCents` leaves out cancelled and expired invoices. `receivedUsdMicros` (millionths of a dollar, as a string) counts the confirmed payments that passed sanctions screening.
 
+## Where buyers stop on the payment page
+
+The payment page and the widget note which steps the buyer of an invoice reached, once per invoice and without anything about the buyer (no IP address, cookie, device or wallet). The funnel counts them for the invoices created in a range, with the same periods as the summary; the trail lists the steps of one invoice.
+
+```php
+use Stablevoy\Model\CheckoutStep;
+use Stablevoy\Model\SummaryPeriod;
+
+$funnel = $stablevoy->stores()->checkoutFunnel(period: SummaryPeriod::LAST_30_DAYS);
+echo $funnel->invoices, ' ', $funnel->steps[CheckoutStep::OPENED], ' ', $funnel->steps[CheckoutStep::TX_SENT], ' ', $funnel->detected, ' ', $funnel->paid, PHP_EOL;
+echo $funnel->openedOn['page'], ' ', $funnel->openedOn['widget'], PHP_EOL;
+
+$trail = $stablevoy->invoices()->checkoutTrail($invoice->id);
+foreach ($trail->steps as $step) {
+    echo $step->at->format(DATE_ATOM), ' ', $step->step, ' ', $step->surface ?? '', PHP_EOL;
+}
+```
+
+Steps come as strings, so a step added to the API later reaches you by its name; `CheckoutStep` holds the known ones. A buyer who pays from another device or by hand may skip page steps, so read the numbers as a guide, not as a count of visits.
+
 ## Unmatched transfers
 
 On Tron the buyer pays your own wallet and the last digits of the amount pick the invoice. A transfer whose amount matched no invoice, usually from an exchange that took its fee out of it, is listed here. Attach it to an invoice in the Stablevoy dashboard; an API key can only read the list.

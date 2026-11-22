@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Stablevoy\Resource;
 
 use Stablevoy\Http\Transport;
+use Stablevoy\Model\CheckoutTrail;
 use Stablevoy\Model\CreatedInvoice;
 use Stablevoy\Model\CreateInvoice;
 use Stablevoy\Model\Fields;
@@ -12,7 +13,7 @@ use Stablevoy\Model\Invoice;
 use Stablevoy\Model\InvoiceFilter;
 use Stablevoy\Model\InvoicePage;
 use Stablevoy\Model\InvoiceSummary;
-use Stablevoy\Model\SummaryPeriod;
+use Stablevoy\Model\SummaryRange;
 
 /** Invoices of the store the API key belongs to. */
 final class Invoices
@@ -85,25 +86,19 @@ final class Invoices
      */
     public function summary(?string $period = null, ?string $createdFrom = null, ?string $createdTo = null): InvoiceSummary
     {
-        $hasDays = $createdFrom !== null || $createdTo !== null;
-        if (($period !== null) === $hasDays) {
-            throw new \InvalidArgumentException('Pass either period or both createdFrom and createdTo');
-        }
-        if ($period !== null) {
-            if (!in_array($period, SummaryPeriod::ALL, true)) {
-                throw new \InvalidArgumentException('period must be one of ' . implode(', ', SummaryPeriod::ALL));
-            }
-            $query = ['period' => $period];
-        } else {
-            $query = [];
-            foreach (['createdFrom' => $createdFrom, 'createdTo' => $createdTo] as $name => $day) {
-                if ($day === null || preg_match('/^\d{4}-\d{2}-\d{2}$/', $day) !== 1) {
-                    throw new \InvalidArgumentException("$name must be a date as YYYY-MM-DD");
-                }
-                $query[$name] = $day;
-            }
-        }
+        $query = SummaryRange::query($period, $createdFrom, $createdTo);
         return InvoiceSummary::fromFields(Fields::of($this->transport->get('/v1/invoices/summary', $query), 'summary'));
+    }
+
+    /**
+     * The steps one invoice went through on the payment page, oldest first: created, what the page reported (each step
+     * once, with the time it was first reached), the first payment seen on chain and the outcome. Buyers who pay from
+     * another device or by hand may skip page steps.
+     */
+    public function checkoutTrail(string $invoiceId): CheckoutTrail
+    {
+        self::checkId($invoiceId);
+        return CheckoutTrail::fromFields(Fields::of($this->transport->get("/v1/invoices/$invoiceId/checkout-trail"), 'checkoutTrail'));
     }
 
     /**
