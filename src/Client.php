@@ -21,7 +21,7 @@ use Stablevoy\Resource\UnmatchedTransfers;
  */
 final class Client
 {
-    public const VERSION = '1.12.0';
+    public const VERSION = '1.13.0';
 
     public function __construct(
         private readonly Invoices $invoices,

@@ -158,7 +158,12 @@ if ($store->networksWithoutPayout !== []) {
 if ($store->evmPayoutNeedsReview()) {
     // The EVM payout wallet is not confirmed: $store->evmNetworksBlocked are not offered until the merchant reviews it in the dashboard.
 }
+if (!$store->invoiceRange->contains($orderTotalUsdCents)) {
+    // Outside the amounts this store accepts now: hide the payment method for this order.
+}
 ```
+
+`$store->invoiceRange` is the range that applies to the store now: the account bounds (the platform ones, or a higher or lower cap set for the account on request) narrowed by the store minimum and maximum. Use it instead of computing a range from `platform()->limits()`.
 
 ## Connect a shop in one click
 

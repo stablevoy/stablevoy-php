@@ -53,6 +53,8 @@ final class Store
         public readonly ?\DateTimeImmutable $archivedAt,
         /** State of the webhook endpoint (failing, paused); null when the store has no webhook URL. Resumed only in the dashboard. */
         public readonly ?WebhookHealth $webhookHealth,
+        /** The amounts an invoice of this store may have now; offer the payment method only inside it. */
+        public readonly InvoiceRange $invoiceRange,
     ) {}
 
     /**
@@ -98,6 +100,7 @@ final class Store
             PayoutAddresses::fromFields($f->object('accountPayoutAddresses')),
             $f->nullableDate('archivedAt'),
             self::webhookHealth($f->nullableObject('webhookHealth')),
+            InvoiceRange::fromFields($f->object('invoiceRange')),
         );
     }
 

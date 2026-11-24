@@ -79,6 +79,28 @@ final class PlatformAndStoresTest extends ApiTestCase
         self::assertNull($this->client(self::json(200, $example))->stores()->current()->archivedAt);
     }
 
+    public function testReadsTheInvoiceRangeOfTheStore(): void
+    {
+        $example = OpenApi::example('GET', '/v1/store', 200);
+        $range = $this->client(self::json(200, $example))->stores()->current()->invoiceRange;
+        self::assertSame(500, $range->minUsdCents);
+        self::assertSame(100_000, $range->maxUsdCents);
+        $raised = $this->client(self::json(200, ['invoiceRange' => ['minUsdCents' => 500, 'maxUsdCents' => 20_000_000]] + $example))->stores()->current()->invoiceRange;
+        self::assertTrue($raised->contains(15_000_000));
+        self::assertTrue($raised->contains(500));
+        self::assertTrue($raised->contains(20_000_000));
+        self::assertFalse($raised->contains(499));
+        self::assertFalse($raised->contains(20_000_001));
+    }
+
+    public function testRefusesAStoreWithoutAnInvoiceRange(): void
+    {
+        $example = OpenApi::example('GET', '/v1/store', 200);
+        unset($example['invoiceRange']);
+        $this->expectException(\Stablevoy\Exception\UnexpectedResponseException::class);
+        $this->client(self::json(200, $example))->stores()->current();
+    }
+
     public function testReadsTheStateOfTheWebhookEndpointNullWithoutAWebhookUrl(): void
     {
         $example = OpenApi::example('GET', '/v1/store', 200);
