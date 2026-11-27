@@ -59,6 +59,29 @@ foreach ($stablevoy->invoices()->all(filter: $filter) as $invoice) {
 }
 ```
 
+## Confirm the payout wallet in the payment link
+
+Put the payout wallets your shop confirmed into the payment link, and the Stablevoy payment page refuses any other wallet, even one a compromised server would name. Save the wallets when the merchant confirms them in your shop; never take them from an API answer or a webhook.
+
+```php
+use Stablevoy\Checkout\CheckoutLink;
+use Stablevoy\Checkout\PayoutAnchor;
+use Stablevoy\Exception\PayoutMismatchException;
+
+$anchor = new PayoutAnchor(evm: $confirmedEvmWallet, tron: $confirmedTronWallet);
+try {
+    $link = (new CheckoutLink())->for($created, $anchor);
+    if ($link->mismatchedNetworks !== []) {
+        // The payout wallet changed for these networks: ask the merchant to confirm the new one.
+    }
+    header('Location: ' . $link->url);
+} catch (PayoutMismatchException $e) {
+    // No network pays to a confirmed wallet: do not send the buyer, tell the merchant.
+}
+```
+
+When the merchant changes a payout wallet, every store using it gets a `store.payout_changed` webhook: show the merchant the new wallet and save it only after they confirm it in your shop.
+
 ## Prices in your own currency
 
 A shop that prices in EUR, GBP, JPY or another supported currency sends the price as it is, in the smallest unit of the currency, instead of `amountUsdCents`:

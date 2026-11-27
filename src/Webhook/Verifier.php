@@ -17,7 +17,7 @@ use Stablevoy\Time\SystemClock;
 final class Verifier
 {
     /**
-     * @param string $secret the webhook signing secret of the store (whsec_...)
+     * @param string $secret the webhook signing secret of the store (svwhsec_...; older whsec_... secrets keep working)
      * @param int $toleranceSeconds how old a signature may be, against replays
      */
     public function __construct(
